@@ -1,63 +1,100 @@
-import Image from 'next/image';
+import Image from "next/image";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-50 font-sans dark:from-zinc-900 dark:via-black dark:to-zinc-900">
-      <main className="flex w-full max-w-md flex-col gap-6 rounded-2xl bg-white p-10 shadow-2xl dark:bg-zinc-900">
-        {/* Logo Section */}
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative h-32 w-32">
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-50 via-slate-50 to-blue-100 font-sans dark:from-[#1a1f3a] dark:via-[#0f1220] dark:to-[#232C64]">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -left-20 -top-20 h-96 w-96 animate-pulse rounded-full bg-[#232C64]/20 blur-3xl dark:bg-[#232C64]/40"></div>
+        <div className="absolute -bottom-32 -right-20 h-[600px] w-[600px] animate-pulse rounded-full bg-blue-400/20 blur-3xl delay-1000 dark:bg-[#232C64]/30"></div>
+        <div className="absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-[#232C64]/15 blur-3xl delay-500 dark:bg-blue-500/20"></div>
+      </div>
+
+      {/* Main content */}
+      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-12">
+        {/* Logo with glow effect */}
+        <div className="mb-8 flex flex-col items-center">
+          <div className="relative mb-6 h-48 w-48 drop-shadow-2xl transition-transform hover:scale-105 sm:h-56 sm:w-56">
+            <div className="absolute inset-0 animate-pulse rounded-full bg-[#232C64]/30 blur-2xl dark:bg-[#232C64]/50"></div>
             <Image
               src="/OwlSwapLogo-Transparent.png"
               alt="Owl Swap Logo"
               fill
-              className="object-contain"
+              className="relative object-contain"
               priority
             />
           </div>
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-blue-600 dark:text-blue-400">
+
+          {/* Title section */}
+          <div className="mb-4 text-center">
+            <h1 className="mb-2 text-6xl font-extrabold text-[#232C64] drop-shadow-sm dark:text-white sm:text-7xl">
               Owl Swap
             </h1>
-            <p className="mt-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
-              Westfield State University
-            </p>
+            <div className="flex items-center justify-center gap-2">
+              <div className="h-px w-12 bg-gradient-to-r from-transparent to-[#232C64]/60 dark:to-blue-400/60"></div>
+              <p className="text-lg font-semibold text-[#232C64] dark:text-blue-300">
+                Westfield State University
+              </p>
+              <div className="h-px w-12 bg-gradient-to-l from-transparent to-[#232C64]/60 dark:to-blue-400/60"></div>
+            </div>
           </div>
-        </div>
 
-        {/* Welcome Message */}
-        <div className="text-center">
-          <p className="text-base text-zinc-700 dark:text-zinc-300">
-            Buy, sell, and trade with fellow Owls
+          {/* Description */}
+          <p className="mb-2 max-w-md text-center text-xl font-medium text-slate-700 dark:text-slate-200">
+            Your campus marketplace awaits
           </p>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            Your trusted campus marketplace
+          <p className="max-w-lg text-center text-base text-slate-600 dark:text-slate-300">
+            Buy, sell, and trade with fellow Owls in a trusted community
           </p>
         </div>
 
         {/* Buttons */}
-        <div className="flex flex-col gap-3 pt-2">
+        <div className="flex w-full max-w-sm flex-col gap-4 sm:flex-row sm:gap-4">
           <a
             href="/signin"
-            className="rounded-xl bg-blue-600 px-6 py-3.5 text-center font-semibold text-white transition-all hover:bg-blue-700 hover:shadow-lg dark:bg-blue-500 dark:hover:bg-blue-600"
+            className="group relative overflow-hidden rounded-2xl bg-[#232C64] px-8 py-4 text-center text-lg font-bold text-white shadow-xl transition-all hover:scale-105 hover:bg-[#1a2350] hover:shadow-2xl dark:bg-[#232C64] dark:hover:bg-[#2d3a7a]"
           >
-            Sign In
+            <span className="relative z-10">Sign In</span>
           </a>
           <a
             href="/signup"
-            className="rounded-xl border-2 border-blue-600 bg-white px-6 py-3.5 text-center font-semibold text-blue-600 transition-all hover:bg-blue-50 dark:border-blue-500 dark:bg-zinc-900 dark:text-blue-400 dark:hover:bg-zinc-800"
+            className="group rounded-2xl border-2 border-[#232C64] bg-white/80 px-8 py-4 text-center text-lg font-bold text-[#232C64] shadow-xl backdrop-blur-sm transition-all hover:scale-105 hover:bg-white hover:shadow-2xl dark:border-blue-400 dark:bg-slate-800/80 dark:text-blue-300 dark:hover:bg-slate-800"
           >
             Create Account
           </a>
         </div>
 
-        {/* Footer */}
-        <div className="mt-2 text-center">
-          <p className="text-xs text-zinc-400 dark:text-zinc-500">
-            Exclusive to Westfield State University students
-          </p>
+        {/* Features */}
+        <div className="mt-16 grid max-w-4xl grid-cols-1 gap-6 px-4 sm:grid-cols-3">
+          <div className="rounded-2xl bg-white/70 p-6 text-center backdrop-blur-sm transition-transform hover:scale-105 dark:bg-slate-800/70">
+            <div className="mb-3 text-4xl">🛍️</div>
+            <h3 className="mb-2 font-bold text-[#232C64] dark:text-slate-100">
+              Buy & Sell
+            </h3>
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Find great deals from students on campus
+            </p>
+          </div>
+          <div className="rounded-2xl bg-white/70 p-6 text-center backdrop-blur-sm transition-transform hover:scale-105 dark:bg-slate-800/70">
+            <div className="mb-3 text-4xl">🦉</div>
+            <h3 className="mb-2 font-bold text-[#232C64] dark:text-slate-100">
+              Owls Only
+            </h3>
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Exclusive to Westfield State students
+            </p>
+          </div>
+          <div className="rounded-2xl bg-white/70 p-6 text-center backdrop-blur-sm transition-transform hover:scale-105 dark:bg-slate-800/70">
+            <div className="mb-3 text-4xl">🔒</div>
+            <h3 className="mb-2 font-bold text-[#232C64] dark:text-slate-100">
+              Safe & Secure
+            </h3>
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Trade safely within your campus community
+            </p>
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

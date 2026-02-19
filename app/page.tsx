@@ -2,11 +2,11 @@ import Image from "next/image";
 
 export default function Home() {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-50 via-slate-50 to-blue-100 font-sans dark:from-[#1a1f3a] dark:via-[#0f1220] dark:to-[#232C64]">
+    <div className="relative min-h-screen overflow-hidden bg-linear-to-br from-blue-50 via-slate-50 to-blue-100 font-sans dark:from-[#1a1f3a] dark:via-[#0f1220] dark:to-[#232C64]">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -left-20 -top-20 h-96 w-96 animate-pulse rounded-full bg-[#232C64]/20 blur-3xl dark:bg-[#232C64]/40"></div>
-        <div className="absolute -bottom-32 -right-20 h-[600px] w-[600px] animate-pulse rounded-full bg-blue-400/20 blur-3xl delay-1000 dark:bg-[#232C64]/30"></div>
+        <div className="absolute -bottom-32 -right-20 h-150 w-150 animate-pulse rounded-full bg-blue-400/20 blur-3xl delay-1000 dark:bg-[#232C64]/30"></div>
         <div className="absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-[#232C64]/15 blur-3xl delay-500 dark:bg-blue-500/20"></div>
       </div>
 
@@ -31,11 +31,11 @@ export default function Home() {
               Owl Swap
             </h1>
             <div className="flex items-center justify-center gap-2">
-              <div className="h-px w-12 bg-gradient-to-r from-transparent to-[#232C64]/60 dark:to-blue-400/60"></div>
+              <div className="h-px w-12 bg-linear-to-r from-transparent to-[#232C64]/60 dark:to-blue-400/60"></div>
               <p className="text-lg font-semibold text-[#232C64] dark:text-blue-300">
                 Westfield State University
               </p>
-              <div className="h-px w-12 bg-gradient-to-l from-transparent to-[#232C64]/60 dark:to-blue-400/60"></div>
+              <div className="h-px w-12 bg-linear-to-l from-transparent to-[#232C64]/60 dark:to-blue-400/60"></div>
             </div>
           </div>
 

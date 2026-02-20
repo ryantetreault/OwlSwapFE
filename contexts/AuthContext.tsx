@@ -22,6 +22,7 @@ interface AuthContextType {
   signUp: (userData: SignUpRequest) => Promise<void>;
   signOut: () => void;
   clearError: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -147,6 +148,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const userResponse = await apiClient.get<User>(
+        API_ENDPOINTS.AUTH.ME,
+        true
+      );
+      setUser(userResponse);
+      setStoredUser(userResponse);
+    } catch (error) {
+      console.error('Error refreshing user:', error);
+    }
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -157,6 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signUp,
         signOut,
         clearError,
+        refreshUser,
       }}
     >
       {children}

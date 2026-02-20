@@ -5,6 +5,7 @@ export const API_ENDPOINTS = {
     SIGNIN: '/api/auth/login',
     SIGNUP: '/api/auth/signup',
     ME: '/user/api/profile',
+    UPDATE_PROFILE: '/user/api/update',
   },
   ITEMS: {
     ALL: '/item/all',

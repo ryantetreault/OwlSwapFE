@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { useListings } from "@/hooks/useListings";
 import { SearchBar } from "@/components/listings/SearchBar";
 import { CategoryFilter } from "@/components/listings/CategoryFilter";
@@ -26,6 +27,35 @@ export default function ListingsPage() {
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8 space-y-4">
+          {/* Header with Create Listing Button */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                Browse Listings
+              </h1>
+              <p className="text-slate-600 dark:text-slate-400">
+                Discover items, services, and requests from the community
+              </p>
+            </div>
+            <Link
+              href="/create-listing"
+              className="flex items-center gap-2 px-6 py-3 bg-[#232C64] dark:bg-[#2d3a7a] text-white rounded-lg hover:bg-[#1a2350] dark:hover:bg-[#232C64] transition-all shadow-md hover:shadow-lg whitespace-nowrap"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path d="M12 4v16m8-8H4" />
+              </svg>
+              <span className="font-semibold">Create Listing</span>
+            </Link>
+          </div>
+
           <div className="flex flex-col gap-4 md:flex-row md:items-center">
             <div className="flex-1">
               <SearchBar onSearch={handleSearch} />

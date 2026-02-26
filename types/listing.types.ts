@@ -4,7 +4,7 @@ export interface ItemImage {
   itemId: number;
   image_name: string; // Backend uses snake_case for image fields
   image_type: string;
-  image_date: number[]; // byte array from backend
+  image_date: number[] | string; // byte array from backend (may be base64 string via Jackson)
 }
 
 export interface Listing {
@@ -26,6 +26,15 @@ export interface Listing {
 export interface Category {
   categoryId: number;
   name: string;
+}
+
+// Backend actual response from LocationDto.java
+export interface Location {
+  locationId: number;
+  name: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 // Backend returns Page<ItemDto> with Spring pagination structure

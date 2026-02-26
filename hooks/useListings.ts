@@ -23,7 +23,7 @@ export function useListings(): UseListingsReturn {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<ListingFilters>({ page: 0, size: 6 });
+  const [filters, setFilters] = useState<ListingFilters>({ page: 0, size: 1000 });
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
 
@@ -60,7 +60,7 @@ export function useListings(): UseListingsReturn {
       const queryString = params.toString();
       const endpoint = queryString
         ? `${API_ENDPOINTS.ITEMS.SEARCH}?${queryString}`
-        : `${API_ENDPOINTS.ITEMS.ALL}?page=${filters.page || 0}&size=${filters.size || 6}`;
+        : `${API_ENDPOINTS.ITEMS.ALL}?page=${filters.page || 0}&size=${filters.size || 1000}`;
 
       // Backend returns Page<ItemDto> with Spring pagination structure
       const response = await apiClient.get<PaginatedListingsResponse>(endpoint, true);

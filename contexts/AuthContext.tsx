@@ -42,9 +42,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(storedUser);
 
         try {
-          // Backend returns UserDto directly from /user/api/profile
+          // Backend returns UserDto directly from /user/profile
           const response = await apiClient.get<User>(
-            API_ENDPOINTS.AUTH.ME,
+            API_ENDPOINTS.USERS.PROFILE,
             true
           );
           setUser(response);
@@ -74,9 +74,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setAuthToken(response.token);
 
-      // Backend returns UserDto directly from /user/api/profile
+      // Backend returns UserDto directly from /user/profile
       const userResponse = await apiClient.get<User>(
-        API_ENDPOINTS.AUTH.ME,
+        API_ENDPOINTS.USERS.PROFILE,
         true
       );
 
@@ -117,9 +117,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setAuthToken(loginResponse.token);
 
-      // Backend returns UserDto directly from /user/api/profile
+      // Backend returns UserDto directly from /user/profile
       const userResponse = await apiClient.get<User>(
-        API_ENDPOINTS.AUTH.ME,
+        API_ENDPOINTS.USERS.PROFILE,
         true
       );
       console.log('User details:', userResponse);
@@ -151,7 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = useCallback(async () => {
     try {
       const userResponse = await apiClient.get<User>(
-        API_ENDPOINTS.AUTH.ME,
+        API_ENDPOINTS.USERS.PROFILE,
         true
       );
       setUser(userResponse);

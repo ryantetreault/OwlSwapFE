@@ -1,53 +1,59 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
-import { ErrorMessage } from '@/components/ui/ErrorMessage';
-import type { SignUpRequest } from '@/types/auth.types';
+import React, { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { ErrorMessage } from "@/components/ui/ErrorMessage";
+import type { SignUpRequest } from "@/types/auth.types";
 
 export function SignUpForm() {
   const { signUp, error, clearError, loading } = useAuth();
-  const [formData, setFormData] = useState<SignUpRequest & { confirmPassword: string }>({
-    username: '',
-    email: '',
-    firstName: '',
-    lastName: '',
-    password: '',
-    confirmPassword: '',
+  const [formData, setFormData] = useState<
+    SignUpRequest & { confirmPassword: string }
+  >({
+    username: "",
+    email: "",
+    firstName: "",
+    lastName: "",
+    password: "",
+    confirmPassword: "",
   });
-  const [validationErrors, setValidationErrors] = useState<Partial<typeof formData>>({});
+  const [validationErrors, setValidationErrors] = useState<
+    Partial<typeof formData>
+  >({});
 
   const validateForm = (): boolean => {
     const errors: Partial<typeof formData> = {};
 
     if (!formData.firstName) {
-      errors.firstName = 'First name is required';
+      errors.firstName = "First name is required";
     }
 
     if (!formData.lastName) {
-      errors.lastName = 'Last name is required';
+      errors.lastName = "Last name is required";
     }
 
     if (!formData.username) {
-      errors.username = 'Username is required';
+      errors.username = "Username is required";
     }
 
     if (!formData.email) {
-      errors.email = 'Email is required';
+      errors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Invalid email format';
+      errors.email = "Invalid email format";
+    } else if (!formData.email.endsWith("@westfield.ma.edu")) {
+      errors.email = "Email must be a Westfield State University address";
     }
 
     if (!formData.password) {
-      errors.password = 'Password is required';
+      errors.password = "Password is required";
     } else if (formData.password.length < 8) {
-      errors.password = 'Password must be at least 8 characters';
+      errors.password = "Password must be at least 8 characters";
     }
 
     if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
+      errors.confirmPassword = "Passwords do not match";
     }
 
     setValidationErrors(errors);
@@ -70,9 +76,9 @@ export function SignUpForm() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (validationErrors[name as keyof typeof formData]) {
-      setValidationErrors(prev => ({ ...prev, [name]: undefined }));
+      setValidationErrors((prev) => ({ ...prev, [name]: undefined }));
     }
   };
 
@@ -122,13 +128,13 @@ export function SignUpForm() {
       />
 
       <Input
-        label="Email"
+        label="Email (must be @westfield.ma.edu)"
         type="email"
         name="email"
         value={formData.email}
         onChange={handleChange}
         error={validationErrors.email}
-        placeholder="your.email@westfield.edu"
+        placeholder="your.email@westfield.ma.edu"
         autoComplete="email"
         required
       />
@@ -162,8 +168,11 @@ export function SignUpForm() {
       </Button>
 
       <p className="mt-4 text-center text-sm text-slate-600 dark:text-slate-400">
-        Already have an account?{' '}
-        <a href="/signin" className="font-semibold text-[#232C64] hover:underline dark:text-blue-400">
+        Already have an account?{" "}
+        <a
+          href="/signin"
+          className="font-semibold text-[#232C64] hover:underline dark:text-blue-400"
+        >
           Sign In
         </a>
       </p>

@@ -3,15 +3,18 @@
 import React from "react";
 import Link from "next/link";
 import { useListings } from "@/hooks/useListings";
+import { useFavorites } from "@/hooks/useFavorites";
 import { SearchBar } from "@/components/listings/SearchBar";
 import { CategoryFilter } from "@/components/listings/CategoryFilter";
-import { ListingGrid } from "@/components/listings/ListingGrid";
+import { ListingCard } from "@/components/listings/ListingCard";
+import { Pagination } from "@/components/ui/Pagination";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import Header from "@/components/Header";
 
 export default function ListingsPage() {
-  const { listings, categories, loading, error, filters, setFilters } =
+  const { listings, categories, loading, error, filters, setFilters, totalPages, currentPage } =
     useListings();
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   const handleSearch = (query: string) => {
     setFilters({ ...filters, keyword: query, page: 0 }); // Backend expects 'keyword'
@@ -19,6 +22,20 @@ export default function ListingsPage() {
 
   const handleCategoryChange = (categoryName: string | undefined) => {
     setFilters({ ...filters, category: categoryName, page: 0 }); // Backend expects category name
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setFilters({ ...filters, page: newPage });
+    // Scroll to top for better UX
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleToggleFavorite = async (itemId: number) => {
+    try {
+      await toggleFavorite(itemId);
+    } catch (err) {
+      console.error('Failed to toggle favorite:', err);
+    }
   };
 
   return (
@@ -99,7 +116,35 @@ export default function ListingsPage() {
               </p>
             </div>
 
-            <ListingGrid listings={listings} />
+            {/* Listings Grid with Favorites */}
+            {listings.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-slate-600 dark:text-slate-400">
+                  No listings found. Try adjusting your search or filters.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {listings.map((listing) => (
+                  <ListingCard
+                    key={listing.itemId}
+                    listing={listing}
+                    isFavorite={isFavorite(listing.itemId)}
+                    onToggleFavorite={handleToggleFavorite}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                disabled={loading}
+              />
+            )}
           </>
         )}
       </main>

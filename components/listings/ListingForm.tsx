@@ -6,9 +6,12 @@ import { apiClient } from "@/lib/api";
 import { API_ENDPOINTS } from "@/lib/constants";
 import type { User } from "@/types/auth.types";
 import type { Category, Location } from "@/types/listing.types";
+import type { ApiError } from "@/types/api.types";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
+import { ValidationError } from "@/components/ui/ValidationError";
+import { parseDeadlineForBackend } from "@/lib/utils/date";
 
 interface ListingFormProps {
   user: User;
@@ -39,6 +42,7 @@ export function ListingForm({ user }: ListingFormProps) {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>();
   const [formData, setFormData] = useState<ListingFormData>({
     name: "",
     description: "",
@@ -116,6 +120,7 @@ export function ListingForm({ user }: ListingFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setFieldErrors(undefined);
     setLoading(true);
 
     try {
@@ -154,8 +159,9 @@ export function ListingForm({ user }: ListingFormProps) {
           ? parseInt(formData.durationMinutes)
           : 60;
       } else if (formData.itemType === "request") {
-        itemDto.deadline =
-          formData.deadline || new Date().toISOString().split("T")[0];
+        // Convert HTML date input (YYYY-MM-DD) to backend format (YYYY/MM/DD)
+        const deadlineInput = formData.deadline || new Date().toISOString().split("T")[0];
+        itemDto.deadline = parseDeadlineForBackend(deadlineInput);
       }
 
       let response;
@@ -189,9 +195,16 @@ export function ListingForm({ user }: ListingFormProps) {
 
       // Redirect to listings page
       router.push("/listings");
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error creating listing:", err);
-      setError(err.message || "Failed to create listing. Please try again.");
+      const apiError = err as ApiError;
+
+      // Extract field-level errors if present
+      if (apiError.fieldErrors) {
+        setFieldErrors(apiError.fieldErrors);
+      }
+
+      setError(apiError.message || "Failed to create listing. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -209,15 +222,18 @@ export function ListingForm({ user }: ListingFormProps) {
           Basic Information
         </h2>
 
-        <Input
-          label="Title"
-          type="text"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          placeholder="e.g., Calculus Textbook, Tutoring Service, Looking for Roommate"
-          required
-        />
+        <div>
+          <Input
+            label="Title"
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            placeholder="e.g., Calculus Textbook, Tutoring Service, Looking for Roommate"
+            required
+          />
+          <ValidationError fieldErrors={fieldErrors} fieldName="name" />
+        </div>
 
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -232,20 +248,24 @@ export function ListingForm({ user }: ListingFormProps) {
             placeholder="Describe your item, service, or request in detail..."
             required
           />
+          <ValidationError fieldErrors={fieldErrors} fieldName="description" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input
-            label="Price ($)"
-            type="number"
-            name="price"
-            value={formData.price}
-            onChange={handleChange}
-            placeholder="0.00"
-            step="0.01"
-            min="0"
-            required
-          />
+          <div>
+            <Input
+              label="Price ($)"
+              type="number"
+              name="price"
+              value={formData.price}
+              onChange={handleChange}
+              placeholder="0.00"
+              step="0.01"
+              min="0"
+              required
+            />
+            <ValidationError fieldErrors={fieldErrors} fieldName="price" />
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -304,6 +324,7 @@ export function ListingForm({ user }: ListingFormProps) {
                 </option>
               ))}
             </select>
+            <ValidationError fieldErrors={fieldErrors} fieldName="locationId" />
           </div>
         </div>
       </div>
@@ -318,46 +339,58 @@ export function ListingForm({ user }: ListingFormProps) {
 
         {formData.itemType === "product" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Quantity"
-              type="number"
-              name="quantity"
-              value={formData.quantity}
-              onChange={handleChange}
-              placeholder="1"
-              min="1"
-            />
-            <Input
-              label="Brand (optional)"
-              type="text"
-              name="brand"
-              value={formData.brand}
-              onChange={handleChange}
-              placeholder="e.g., Apple, Nike, Pearson"
-            />
+            <div>
+              <Input
+                label="Quantity"
+                type="number"
+                name="quantity"
+                value={formData.quantity}
+                onChange={handleChange}
+                placeholder="1"
+                min="1"
+              />
+              <ValidationError fieldErrors={fieldErrors} fieldName="quantity" />
+            </div>
+            <div>
+              <Input
+                label="Brand (optional)"
+                type="text"
+                name="brand"
+                value={formData.brand}
+                onChange={handleChange}
+                placeholder="e.g., Apple, Nike, Pearson"
+              />
+              <ValidationError fieldErrors={fieldErrors} fieldName="brand" />
+            </div>
           </div>
         )}
 
         {formData.itemType === "service" && (
-          <Input
-            label="Duration (minutes)"
-            type="number"
-            name="durationMinutes"
-            value={formData.durationMinutes}
-            onChange={handleChange}
-            placeholder="60"
-            min="1"
-          />
+          <div>
+            <Input
+              label="Duration (minutes)"
+              type="number"
+              name="durationMinutes"
+              value={formData.durationMinutes}
+              onChange={handleChange}
+              placeholder="60"
+              min="1"
+            />
+            <ValidationError fieldErrors={fieldErrors} fieldName="durationMinutes" />
+          </div>
         )}
 
         {formData.itemType === "request" && (
-          <Input
-            label="Deadline"
-            type="date"
-            name="deadline"
-            value={formData.deadline}
-            onChange={handleChange}
-          />
+          <div>
+            <Input
+              label="Deadline"
+              type="date"
+              name="deadline"
+              value={formData.deadline}
+              onChange={handleChange}
+            />
+            <ValidationError fieldErrors={fieldErrors} fieldName="deadline" />
+          </div>
         )}
       </div>
 

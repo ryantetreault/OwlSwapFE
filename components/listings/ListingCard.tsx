@@ -5,9 +5,11 @@ import type { Listing } from "@/types/listing.types";
 interface ListingCardProps {
   listing: Listing;
   onClick?: () => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: (itemId: number) => void;
 }
 
-export function ListingCard({ listing, onClick }: ListingCardProps) {
+export function ListingCard({ listing, onClick, isFavorite, onToggleFavorite }: ListingCardProps) {
   const formattedPrice = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -43,7 +45,31 @@ export function ListingCard({ listing, onClick }: ListingCardProps) {
   const imageSrc = getImageSrc();
 
   return (
-    <Card onClick={onClick}>
+    <Card onClick={onClick} className="relative">
+      {/* Favorite Button */}
+      {onToggleFavorite && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite(listing.itemId);
+          }}
+          className="absolute top-2 right-2 z-10 p-2 bg-white/90 dark:bg-slate-800/90 rounded-full shadow-md hover:scale-110 transition-transform"
+          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+        >
+          {isFavorite ? (
+            // Filled heart
+            <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+            </svg>
+          ) : (
+            // Outline heart
+            <svg className="w-5 h-5 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          )}
+        </button>
+      )}
+
       <div className="mb-4 h-48 overflow-hidden rounded-lg bg-slate-200 dark:bg-slate-700">
         {imageSrc ? (
           <img

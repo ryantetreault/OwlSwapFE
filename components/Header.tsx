@@ -53,6 +53,11 @@ export default function Header() {
     closeMenu();
   };
 
+  const handleFavoritesClick = () => {
+    router.push('/favorites');
+    closeMenu();
+  };
+
   return (
     <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -159,6 +164,24 @@ export default function Header() {
                           <path d="M12 4v16m8-8H4" />
                         </svg>
                         <span>Create Listing</span>
+                      </button>
+
+                      <button
+                        onClick={handleFavoritesClick}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all group"
+                      >
+                        <svg
+                          className="w-5 h-5 text-slate-500 dark:text-slate-400 group-hover:text-[#232C64] dark:group-hover:text-white transition-colors"
+                          fill="none"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                        <span>My Favorites</span>
                       </button>
 
                       <button

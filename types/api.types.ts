@@ -1,7 +1,11 @@
 export interface ApiError {
   message: string;
   status: number;
-  errors?: Record<string, string[]>;
+  error?: string;                        // Backend error code (e.g., "VALIDATION_FAILED")
+  path?: string;                         // Request path
+  timestamp?: string;                    // ISO timestamp
+  errors?: Record<string, string[]>;     // Keep for backwards compatibility
+  fieldErrors?: Record<string, string>;  // Backend field-level validation errors
 }
 
 export interface ApiResponse<T> {

@@ -24,8 +24,8 @@ export default function FavoritesPage() {
 
   // Fetch favorites when the page loads
   useEffect(() => {
-    refreshFavorites().catch(err => {
-      console.error('Failed to load favorites:', err);
+    refreshFavorites().catch((err) => {
+      console.error("Failed to load favorites:", err);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -34,9 +34,9 @@ export default function FavoritesPage() {
     try {
       await setPage(newPage);
       // Scroll to top for better UX
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
-      console.error('Failed to change page:', err);
+      console.error("Failed to change page:", err);
     }
   };
 
@@ -47,7 +47,7 @@ export default function FavoritesPage() {
       await refreshFavorites();
     } catch (err) {
       // Error is already handled in the hook
-      console.error('Failed to toggle favorite:', err);
+      console.error("Failed to toggle favorite:", err);
     }
   };
 
@@ -72,7 +72,7 @@ export default function FavoritesPage() {
         )}
 
         {loading ? (
-          <div className="flex min-h-[400px] items-center justify-center">
+          <div className="flex min-h-100 items-center justify-center">
             <div className="text-center">
               <div className="mb-4 inline-block h-12 w-12 animate-spin rounded-full border-4 border-[#232C64] border-t-transparent"></div>
               <p className="text-slate-600 dark:text-slate-300">
@@ -100,7 +100,8 @@ export default function FavoritesPage() {
               No favorites yet
             </h2>
             <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
-              Browse listings and click the heart icon to save items to your favorites for easy access later.
+              Browse listings and click the heart icon to save items to your
+              favorites for easy access later.
             </p>
             <Link href="/listings">
               <Button>Browse Listings</Button>

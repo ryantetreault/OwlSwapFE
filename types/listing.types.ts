@@ -16,6 +16,7 @@ export interface Listing {
   category: string; // Category name as string
   releaseDate: string;
   available: boolean;
+  listingStatus?: 'AVAILABLE' | 'RESERVED' | 'SOLD';
   location?: string;
   locationId: number | null;
   itemType: string; // 'product', 'service', 'request'

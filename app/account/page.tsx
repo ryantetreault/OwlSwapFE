@@ -22,6 +22,15 @@ interface Purchase {
   sellerName: string;
 }
 
+interface Sale {
+  saleId: number;
+  itemName: string;
+  price: number;
+  saleDate: string;
+  buyerId: number;
+  buyerName: string;
+}
+
 interface Rating {
   ratingId: number;
   rating: number;
@@ -34,10 +43,11 @@ export default function AccountPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    "overview" | "listings" | "purchases" | "ratings"
+    "overview" | "listings" | "purchases" | "sales" | "ratings"
   >("overview");
   const [userListings, setUserListings] = useState<Listing[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -91,6 +101,29 @@ export default function AccountPage() {
       } catch (error) {
         console.error("Error loading purchases:", error);
         setPurchases([]);
+      }
+
+      // Load sales (transactions where user is seller)
+      try {
+        if (user?.userId) {
+          const salesResponse = await transactionsService.getTransactionsBySeller(
+            user.userId,
+            0,
+            100,
+          );
+          const saleData = salesResponse.content.map((t) => ({
+            saleId: t.transactionId,
+            itemName: t.item.name,
+            price: t.item.price,
+            saleDate: t.transactionDate || new Date().toISOString(),
+            buyerId: t.buyer.userId,
+            buyerName: `${t.buyer.firstName} ${t.buyer.lastName}`,
+          }));
+          setSales(saleData);
+        }
+      } catch (error) {
+        console.error("Error loading sales:", error);
+        setSales([]);
       }
 
       // TODO: Load ratings when backend endpoint is available
@@ -284,6 +317,16 @@ export default function AccountPage() {
                 Purchases ({purchases.length})
               </button>
               <button
+                onClick={() => setActiveTab("sales")}
+                className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === "sales"
+                    ? "border-[#232C64] text-[#232C64] dark:text-white"
+                    : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                Sales ({sales.length})
+              </button>
+              <button
                 onClick={() => setActiveTab("ratings")}
                 className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === "ratings"
@@ -306,7 +349,7 @@ export default function AccountPage() {
                 {/* Overview Tab */}
                 {activeTab === "overview" && (
                   <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4">
                         <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400">
                           Active Listings
@@ -321,6 +364,14 @@ export default function AccountPage() {
                         </h3>
                         <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">
                           {purchases.length}
+                        </p>
+                      </div>
+                      <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4">
+                        <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                          Total Sales
+                        </h3>
+                        <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">
+                          {sales.length}
                         </p>
                       </div>
                       <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4">
@@ -620,6 +671,48 @@ export default function AccountPage() {
                               </div>
                               <span className="text-lg font-bold text-[#232C64] dark:text-white">
                                 ${purchase.price.toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Sales Tab */}
+                {activeTab === "sales" && (
+                  <div>
+                    {sales.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-slate-600 dark:text-slate-400">
+                          No sales yet.
+                        </p>
+                        <p className="text-sm text-slate-500 dark:text-slate-500 mt-2">
+                          This section will show items you've sold.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {sales.map((sale) => (
+                          <div
+                            key={sale.saleId}
+                            className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4"
+                          >
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h4 className="font-semibold text-slate-900 dark:text-white">
+                                  {sale.itemName}
+                                </h4>
+                                <p className="text-sm text-slate-600 dark:text-slate-400">
+                                  Buyer: {sale.buyerName}
+                                </p>
+                                <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
+                                  {new Date(sale.saleDate).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <span className="text-lg font-bold text-[#232C64] dark:text-white">
+                                ${sale.price.toFixed(2)}
                               </span>
                             </div>
                           </div>

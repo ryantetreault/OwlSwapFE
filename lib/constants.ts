@@ -48,6 +48,12 @@ export const API_ENDPOINTS = {
     BY_SELLER: (id: number) => `/transaction/seller/${id}/all`,
     PURCHASE: (itemId: number) => `/transaction/purchase/${itemId}`, // Buyer from JWT
   },
+  ORDERS: {
+    CREATE: '/order/create',
+    CANCEL: (orderId: number) => `/order/${orderId}/cancel`,
+    PAY: (orderId: number) => `/order/${orderId}/pay`,
+    FULFILL: (orderId: number) => `/order/${orderId}/fulfill`,
+  },
 } as const;
 
 export const STORAGE_KEYS = {

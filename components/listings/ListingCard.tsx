@@ -1,15 +1,15 @@
 import React from "react";
+import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import type { Listing } from "@/types/listing.types";
 
 interface ListingCardProps {
   listing: Listing;
-  onClick?: () => void;
   isFavorite?: boolean;
   onToggleFavorite?: (itemId: number) => void;
 }
 
-export function ListingCard({ listing, onClick, isFavorite, onToggleFavorite }: ListingCardProps) {
+export function ListingCard({ listing, isFavorite, onToggleFavorite }: ListingCardProps) {
   const formattedPrice = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -44,9 +44,33 @@ export function ListingCard({ listing, onClick, isFavorite, onToggleFavorite }: 
 
   const imageSrc = getImageSrc();
 
+  // Availability badge — respects listingStatus if present, falls back to available boolean
+  const renderAvailabilityBadge = () => {
+    const status = listing.listingStatus;
+    if (status === "RESERVED") {
+      return (
+        <div className="rounded-lg bg-yellow-50 px-3 py-1 text-center dark:bg-yellow-900/20">
+          <span className="text-xs font-medium text-yellow-800 dark:text-yellow-400">
+            Reserved
+          </span>
+        </div>
+      );
+    }
+    if (status === "SOLD" || !listing.available) {
+      return (
+        <div className="rounded-lg bg-red-50 px-3 py-1 text-center dark:bg-red-900/20">
+          <span className="text-xs font-medium text-red-800 dark:text-red-400">
+            Unavailable
+          </span>
+        </div>
+      );
+    }
+    return null; // Available — no badge needed
+  };
+
   return (
-    <Card onClick={onClick} className="relative">
-      {/* Favorite Button */}
+    <Card className="relative">
+      {/* Favorite Button — outside the Link to prevent navigation on click */}
       {onToggleFavorite && (
         <button
           onClick={(e) => {
@@ -70,63 +94,60 @@ export function ListingCard({ listing, onClick, isFavorite, onToggleFavorite }: 
         </button>
       )}
 
-      <div className="mb-4 h-48 overflow-hidden rounded-lg bg-slate-200 dark:bg-slate-700">
-        {imageSrc ? (
-          <img
-            src={imageSrc}
-            alt={listing.name}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <svg
-              className="h-16 w-16 text-slate-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-          </div>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <div className="flex items-start justify-between">
-          <h3 className="text-lg font-bold text-[#232C64] dark:text-white">
-            {listing.name}
-          </h3>
-          <span className="text-lg font-bold text-[#232C64] dark:text-blue-400">
-            {formattedPrice}
-          </span>
+      {/* Card body links to item detail page */}
+      <Link href={`/listings/${listing.itemId}`} className="block">
+        <div className="mb-4 h-48 overflow-hidden rounded-lg bg-slate-200 dark:bg-slate-700">
+          {imageSrc ? (
+            <img
+              src={imageSrc}
+              alt={listing.name}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <svg
+                className="h-16 w-16 text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+          )}
         </div>
 
-        <p className="line-clamp-2 text-sm text-slate-600 dark:text-slate-300">
-          {listing.description}
-        </p>
-
-        <div className="flex items-center justify-between pt-2">
-          <span className="rounded-full bg-[#232C64]/10 px-3 py-1 text-xs font-medium text-[#232C64] dark:bg-blue-400/10 dark:text-blue-400">
-            {listing.category || "Uncategorized"}
-          </span>
-          <span className="text-xs text-slate-500 dark:text-slate-400">
-            {formattedDate}
-          </span>
-        </div>
-
-        {!listing.available && (
-          <div className="rounded-lg bg-red-50 px-3 py-1 text-center dark:bg-red-900/20">
-            <span className="text-xs font-medium text-red-800 dark:text-red-400">
-              Unavailable
+        <div className="space-y-2">
+          <div className="flex items-start justify-between">
+            <h3 className="text-lg font-bold text-[#232C64] dark:text-white">
+              {listing.name}
+            </h3>
+            <span className="text-lg font-bold text-[#232C64] dark:text-blue-400">
+              {formattedPrice}
             </span>
           </div>
-        )}
-      </div>
+
+          <p className="line-clamp-2 text-sm text-slate-600 dark:text-slate-300">
+            {listing.description}
+          </p>
+
+          <div className="flex items-center justify-between pt-2">
+            <span className="rounded-full bg-[#232C64]/10 px-3 py-1 text-xs font-medium text-[#232C64] dark:bg-blue-400/10 dark:text-blue-400">
+              {listing.category || "Uncategorized"}
+            </span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              {formattedDate}
+            </span>
+          </div>
+
+          {renderAvailabilityBadge()}
+        </div>
+      </Link>
     </Card>
   );
 }

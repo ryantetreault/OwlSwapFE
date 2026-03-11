@@ -1,6 +1,6 @@
 import { apiClient } from '../api';
 import { API_ENDPOINTS } from '../constants';
-import type { OrderDto } from '@/types/order.types';
+import type { OrderDto, OrderStatus } from '@/types/order.types';
 
 export const orderService = {
   /**
@@ -31,5 +31,25 @@ export const orderService = {
    */
   fulfillOrder: async (orderId: number): Promise<OrderDto> => {
     return apiClient.post<OrderDto>(API_ENDPOINTS.ORDERS.FULFILL(orderId), undefined, true);
+  },
+
+  /**
+   * Get all orders where the JWT-authenticated user is the seller.
+   * Optionally filter by status (e.g. 'PAID' to see orders awaiting fulfillment).
+   * NOTE: Requires GET /order/seller/me on the backend (not yet implemented).
+   */
+  getSellerOrders: async (status?: OrderStatus): Promise<OrderDto[]> => {
+    const endpoint = status
+      ? `${API_ENDPOINTS.ORDERS.SELLER_ORDERS}?status=${status}`
+      : API_ENDPOINTS.ORDERS.SELLER_ORDERS;
+    return apiClient.get<OrderDto[]>(endpoint, true);
+  },
+
+  /**
+   * Get all orders where the JWT-authenticated user is the buyer.
+   * NOTE: Requires GET /order/buyer/me on the backend (not yet implemented).
+   */
+  getBuyerOrders: async (): Promise<OrderDto[]> => {
+    return apiClient.get<OrderDto[]>(API_ENDPOINTS.ORDERS.BUYER_ORDERS, true);
   },
 };

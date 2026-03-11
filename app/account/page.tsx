@@ -11,7 +11,10 @@ import {
 import { apiClient } from "@/lib/api";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { transactionsService } from "@/lib/services/transactions.service";
+import { orderService } from "@/lib/services/order.service";
 import type { Listing } from "@/types/listing.types";
+import type { OrderDto } from "@/types/order.types";
+import type { ApiError } from "@/types/api.types";
 
 interface Purchase {
   purchaseId: number;
@@ -52,6 +55,9 @@ export default function AccountPage() {
   const [loading, setLoading] = useState(true);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  const [pendingFulfillments, setPendingFulfillments] = useState<OrderDto[]>([]);
+  const [activeBuyerOrders, setActiveBuyerOrders] = useState<OrderDto[]>([]);
+  const [fulfillLoadingId, setFulfillLoadingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -126,6 +132,26 @@ export default function AccountPage() {
         setSales([]);
       }
 
+      // Load seller's PAID orders awaiting fulfillment (requires GET /order/seller/me on backend)
+      try {
+        const sellerOrders = await orderService.getSellerOrders("PAID");
+        setPendingFulfillments(sellerOrders);
+      } catch {
+        setPendingFulfillments([]);
+      }
+
+      // Load buyer's active orders (requires GET /order/buyer/me on backend)
+      try {
+        const buyerOrders = await orderService.getBuyerOrders();
+        setActiveBuyerOrders(
+          buyerOrders.filter(
+            (o) => o.status === "PENDING" || o.status === "PAID",
+          ),
+        );
+      } catch {
+        setActiveBuyerOrders([]);
+      }
+
       // TODO: Load ratings when backend endpoint is available
       // Placeholder data for now
       setRatings([]);
@@ -174,6 +200,21 @@ export default function AccountPage() {
 
   const closeModal = () => {
     setSelectedListing(null);
+  };
+
+  const handleFulfillOrder = async (orderId: number) => {
+    setFulfillLoadingId(orderId);
+    try {
+      await orderService.fulfillOrder(orderId);
+      setPendingFulfillments((prev) =>
+        prev.filter((o) => o.orderId !== orderId),
+      );
+    } catch (err) {
+      const apiErr = err as ApiError;
+      alert(apiErr.message || "Could not fulfill this order. Please try again.");
+    } finally {
+      setFulfillLoadingId(null);
+    }
   };
 
   if (authLoading || !user) {
@@ -639,6 +680,48 @@ export default function AccountPage() {
                 {/* Purchases Tab */}
                 {activeTab === "purchases" && (
                   <div>
+                    {/* Active Orders (PENDING / PAID) — shown when backend GET /order/buyer/me is available */}
+                    {activeBuyerOrders.length > 0 && (
+                      <div className="mb-6">
+                        <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">
+                          Active Orders
+                        </h3>
+                        <div className="space-y-3">
+                          {activeBuyerOrders.map((order) => (
+                            <div
+                              key={order.orderId}
+                              className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4 flex justify-between items-center"
+                            >
+                              <div>
+                                <p className="font-semibold text-slate-900 dark:text-white">
+                                  Order #{order.orderId}
+                                </p>
+                                <p className="text-sm text-slate-600 dark:text-slate-400">
+                                  Item #{order.itemId}
+                                </p>
+                                <span
+                                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${
+                                    order.status === "PENDING"
+                                      ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                                      : "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300"
+                                  }`}
+                                >
+                                  {order.status}
+                                </span>
+                              </div>
+                              <span className="text-lg font-bold text-[#232C64] dark:text-white">
+                                ${order.amount.toFixed(2)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Purchase History */}
+                    <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">
+                      Purchase History
+                    </h3>
                     {purchases.length === 0 ? (
                       <div className="text-center py-8">
                         <p className="text-slate-600 dark:text-slate-400">
@@ -683,6 +766,61 @@ export default function AccountPage() {
                 {/* Sales Tab */}
                 {activeTab === "sales" && (
                   <div>
+                    {/* Orders to Fulfill — PAID orders awaiting seller action */}
+                    <div className="mb-6">
+                      <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">
+                        Orders to Fulfill
+                      </h3>
+                      {pendingFulfillments.length === 0 ? (
+                        <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4 text-center">
+                          <p className="text-sm text-slate-500 dark:text-slate-400">
+                            No orders awaiting fulfillment.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {pendingFulfillments.map((order) => (
+                            <div
+                              key={order.orderId}
+                              className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4 flex justify-between items-center"
+                            >
+                              <div>
+                                <p className="font-semibold text-slate-900 dark:text-white">
+                                  Order #{order.orderId}
+                                </p>
+                                <p className="text-sm text-slate-600 dark:text-slate-400">
+                                  Item #{order.itemId}
+                                </p>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 mt-1">
+                                  PAID
+                                </span>
+                              </div>
+                              <div className="flex flex-col items-end gap-2">
+                                <span className="text-lg font-bold text-[#232C64] dark:text-white">
+                                  ${order.amount.toFixed(2)}
+                                </span>
+                                <button
+                                  onClick={() =>
+                                    handleFulfillOrder(order.orderId)
+                                  }
+                                  disabled={fulfillLoadingId === order.orderId}
+                                  className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  {fulfillLoadingId === order.orderId
+                                    ? "Confirming..."
+                                    : "Mark as Fulfilled"}
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Sales History — completed transactions */}
+                    <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">
+                      Sales History
+                    </h3>
                     {sales.length === 0 ? (
                       <div className="text-center py-8">
                         <p className="text-slate-600 dark:text-slate-400">

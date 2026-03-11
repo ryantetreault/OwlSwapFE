@@ -53,6 +53,8 @@ export const API_ENDPOINTS = {
     CANCEL: (orderId: number) => `/order/${orderId}/cancel`,
     PAY: (orderId: number) => `/order/${orderId}/pay`,
     FULFILL: (orderId: number) => `/order/${orderId}/fulfill`,
+    SELLER_ORDERS: '/order/seller/me',
+    BUYER_ORDERS: '/order/buyer/me',
   },
 } as const;
 

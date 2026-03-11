@@ -126,7 +126,7 @@ class ApiClient {
       }
 
       if (!response.ok) {
-        console.error('API Error Response:', {
+        console.warn('API Error Response:', {
           status: response.status,
           statusText: response.statusText,
           contentType: contentType,

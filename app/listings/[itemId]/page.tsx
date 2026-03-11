@@ -252,6 +252,38 @@ export default function ItemDetailPage() {
                 )}
               </div>
 
+              {/* Type-specific details */}
+              {(listing.durationMinutes != null || listing.brand || listing.quantity != null || listing.deadline) && (
+                <div className="grid grid-cols-2 gap-3">
+                  {listing.durationMinutes != null && (
+                    <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3">
+                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-0.5">Duration</p>
+                      <p className="font-semibold text-slate-900 dark:text-white">{listing.durationMinutes} minutes</p>
+                    </div>
+                  )}
+                  {listing.brand && (
+                    <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3">
+                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-0.5">Brand</p>
+                      <p className="font-semibold text-slate-900 dark:text-white">{listing.brand}</p>
+                    </div>
+                  )}
+                  {listing.quantity != null && (
+                    <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3">
+                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-0.5">Quantity</p>
+                      <p className="font-semibold text-slate-900 dark:text-white">{listing.quantity}</p>
+                    </div>
+                  )}
+                  {listing.deadline && (
+                    <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3">
+                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-0.5">Deadline</p>
+                      <p className="font-semibold text-slate-900 dark:text-white">
+                        {new Date(listing.deadline).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Description */}
               <div>
                 <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">

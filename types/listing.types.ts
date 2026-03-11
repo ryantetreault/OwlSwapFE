@@ -21,6 +21,13 @@ export interface Listing {
   locationId: number | null;
   itemType: string; // 'product', 'service', 'request'
   images: ItemImage[];
+  // product-specific
+  brand?: string;
+  quantity?: number;
+  // service-specific
+  durationMinutes?: number;
+  // request-specific
+  deadline?: string;
 }
 
 // Backend actual response from CategoryDto.java

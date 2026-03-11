@@ -145,6 +145,32 @@ export function ListingCard({ listing, isFavorite, onToggleFavorite }: ListingCa
             </span>
           </div>
 
+          {/* Type-specific fields */}
+          {(listing.durationMinutes != null || listing.brand || listing.quantity != null || listing.deadline) && (
+            <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1">
+              {listing.durationMinutes != null && (
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  Duration: {listing.durationMinutes} min
+                </span>
+              )}
+              {listing.brand && (
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  Brand: {listing.brand}
+                </span>
+              )}
+              {listing.quantity != null && (
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  Qty: {listing.quantity}
+                </span>
+              )}
+              {listing.deadline && (
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  Deadline: {new Date(listing.deadline).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                </span>
+              )}
+            </div>
+          )}
+
           {renderAvailabilityBadge()}
         </div>
       </Link>

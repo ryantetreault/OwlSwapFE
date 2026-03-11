@@ -587,7 +587,7 @@ export default function AccountPage() {
                                     {listing.name}
                                   </h4>
                                   <div className="flex items-center justify-between">
-                                    <span className="text-base font-bold bg-linear-to-r from-blue-500 to-indigo-400 bg-clip-text text-transparent">
+                                    <span className="text-base font-bold text-[#232C64] dark:text-blue-400">
                                       ${listing.price.toFixed(2)}
                                     </span>
                                     <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
@@ -621,6 +621,27 @@ export default function AccountPage() {
                                       })}
                                     </span>
                                   </div>
+                                  {/* Type-specific fields */}
+                                  {listing.durationMinutes != null && (
+                                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                      Duration: {listing.durationMinutes} min
+                                    </div>
+                                  )}
+                                  {listing.brand && (
+                                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                      Brand: {listing.brand}
+                                    </div>
+                                  )}
+                                  {listing.quantity != null && (
+                                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                      Qty: {listing.quantity}
+                                    </div>
+                                  )}
+                                  {listing.deadline && (
+                                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                      Deadline: {new Date(listing.deadline).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                    </div>
+                                  )}
                                 </div>
 
                                 {/* Action Buttons */}
@@ -1013,7 +1034,7 @@ export default function AccountPage() {
               {/* Price Section */}
               <div className="bg-linear-to-r from-[#232C64]/5 to-[#2d3a7a]/5 dark:from-[#232C64]/20 dark:to-[#2d3a7a]/20 rounded-xl p-6 mb-6 border border-[#232C64]/20">
                 <div className="flex items-baseline gap-2 mb-1">
-                  <span className="text-4xl font-bold bg-linear-to-r from-[#232C64] to-[#2d3a7a] bg-clip-text text-transparent">
+                  <span className="text-4xl font-bold text-[#232C64] dark:text-blue-400">
                     ${selectedListing.price.toFixed(2)}
                   </span>
                 </div>
@@ -1058,6 +1079,56 @@ export default function AccountPage() {
                     {selectedListing.category}
                   </p>
                 </div>
+                {selectedListing.durationMinutes != null && (
+                  <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
+                    <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wide">
+                      Duration
+                    </h3>
+                    <p className="text-lg font-semibold text-slate-900 dark:text-white">
+                      {selectedListing.durationMinutes} minutes
+                    </p>
+                  </div>
+                )}
+                {selectedListing.brand && (
+                  <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
+                    <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wide">
+                      Brand
+                    </h3>
+                    <p className="text-lg font-semibold text-slate-900 dark:text-white">
+                      {selectedListing.brand}
+                    </p>
+                  </div>
+                )}
+                {selectedListing.quantity != null && (
+                  <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
+                    <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wide">
+                      Quantity
+                    </h3>
+                    <p className="text-lg font-semibold text-slate-900 dark:text-white">
+                      {selectedListing.quantity}
+                    </p>
+                  </div>
+                )}
+                {selectedListing.deadline && (
+                  <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
+                    <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wide">
+                      Deadline
+                    </h3>
+                    <p className="text-lg font-semibold text-slate-900 dark:text-white">
+                      {new Date(selectedListing.deadline).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                    </p>
+                  </div>
+                )}
+                {selectedListing.location && (
+                  <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
+                    <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wide">
+                      Location
+                    </h3>
+                    <p className="text-lg font-semibold text-slate-900 dark:text-white">
+                      {selectedListing.location}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons */}

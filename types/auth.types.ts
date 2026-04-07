@@ -5,6 +5,7 @@ export interface User {
   firstName: string;
   lastName: string;
   averageRating: number | null;
+  isEmailVerified?: boolean;
 }
 
 export interface AuthTokens {

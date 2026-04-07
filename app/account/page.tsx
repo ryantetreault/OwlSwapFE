@@ -56,6 +56,8 @@ export default function AccountPage() {
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/signin");
+    } else if (!authLoading && user && sessionStorage.getItem('verification_pending') === 'true') {
+      router.push(`/verify-email-sent?email=${encodeURIComponent(user.email)}`);
     } else if (user) {
       loadAccountData();
     }

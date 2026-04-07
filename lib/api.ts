@@ -158,6 +158,12 @@ class ApiClient {
           errors: data.errors,
           fieldErrors: data.fieldErrors,
         };
+
+        // Surface the email verification banner whenever an email-gated action is blocked
+        if (response.status === 403 && data?.error === 'FORBIDDEN' && typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('email-verification-required'));
+        }
+
         throw error;
       }
 

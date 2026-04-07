@@ -5,6 +5,9 @@ export const API_ENDPOINTS = {
     SIGNIN: '/api/auth/login',
     SIGNUP: '/api/auth/signup',
     ME: '/user/profile', // Fixed: backend uses /user/profile not /user/api/profile
+    LOGOUT: '/api/auth/logout',
+    VERIFY_EMAIL: '/api/auth/verify-email',
+    RESEND_VERIFICATION: '/api/auth/resend-verification',
   },
   USERS: {
     ALL: '/user/all', // Get all users

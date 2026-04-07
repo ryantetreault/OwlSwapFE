@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useListings } from "@/hooks/useListings";
 import { useFavorites } from "@/hooks/useFavorites";
 import { SearchBar } from "@/components/listings/SearchBar";
@@ -12,9 +13,16 @@ import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import Header from "@/components/Header";
 
 export default function ListingsPage() {
+  const router = useRouter();
   const { listings, categories, loading, error, filters, setFilters, totalPages, currentPage } =
     useListings();
   const { isFavorite, toggleFavorite } = useFavorites();
+
+  useEffect(() => {
+    if (sessionStorage.getItem('verification_pending') === 'true') {
+      router.push('/verify-email-sent');
+    }
+  }, [router]);
 
   const handleSearch = (query: string) => {
     setFilters({ ...filters, keyword: query, page: 0 }); // Backend expects 'keyword'

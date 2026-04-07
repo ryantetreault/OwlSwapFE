@@ -2,6 +2,8 @@
 
 import React, { useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 import { useFavorites } from "@/hooks/useFavorites";
 import { ListingCard } from "@/components/listings/ListingCard";
 import { Pagination } from "@/components/ui/Pagination";
@@ -10,6 +12,8 @@ import { Button } from "@/components/ui/Button";
 import Header from "@/components/Header";
 
 export default function FavoritesPage() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const {
     favorites,
     loading,
@@ -21,6 +25,14 @@ export default function FavoritesPage() {
     setPage,
     refreshFavorites,
   } = useFavorites();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/signin");
+    } else if (!authLoading && user && sessionStorage.getItem('verification_pending') === 'true') {
+      router.push(`/verify-email-sent?email=${encodeURIComponent(user.email)}`);
+    }
+  }, [user, authLoading, router]);
 
   // Fetch favorites when the page loads
   useEffect(() => {

@@ -83,6 +83,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setStoredUser(userResponse);
       setUser(userResponse);
 
+      // If verification is still pending, send them back to the holding page
+      if (sessionStorage.getItem('verification_pending') === 'true') {
+        router.push(`/verify-email-sent?email=${encodeURIComponent(userResponse.email)}`);
+        return;
+      }
+
       router.push('/listings');
     } catch (err) {
       const apiError = err as ApiError;
@@ -98,39 +104,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
 
-      console.log('Sending signup request with data:', userData);
-      await apiClient.post(
-        API_ENDPOINTS.AUTH.SIGNUP,
-        userData
-      );
-      console.log('Signup successful, now logging in...');
+      await apiClient.post(API_ENDPOINTS.AUTH.SIGNUP, userData);
 
-      // Backend returns { token: string } from AuthResponse.java
-      const loginResponse = await apiClient.post<{ token: string }>(
-        API_ENDPOINTS.AUTH.SIGNIN,
-        {
-          username: userData.username,
-          password: userData.password,
-        }
-      );
-      console.log('Login response:', loginResponse);
+      // Mark email verification as pending — cleared when user signs in after verifying
+      sessionStorage.setItem('verification_pending', 'true');
 
-      setAuthToken(loginResponse.token);
-
-      // Backend returns UserDto directly from /user/profile
-      const userResponse = await apiClient.get<User>(
-        API_ENDPOINTS.USERS.PROFILE,
-        true
-      );
-      console.log('User details:', userResponse);
-
-      setStoredUser(userResponse);
-      setUser(userResponse);
-
-      router.push('/listings');
+      router.push(`/verify-email-sent?email=${encodeURIComponent(userData.email)}`);
     } catch (err) {
       const apiError = err as ApiError;
-      console.error('Signup error:', apiError);
       setError(apiError.message || 'Sign up failed');
       throw err;
     } finally {

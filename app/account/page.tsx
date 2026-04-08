@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Header from "@/components/Header";
 import {
   EditProfileForm,
@@ -134,17 +135,17 @@ export default function AccountPage() {
         setSales([]);
       }
 
-      // Load seller's PAID orders awaiting fulfillment (requires GET /order/seller/me on backend)
+      // Load seller's PAID orders awaiting fulfillment
       try {
-        const sellerOrders = await orderService.getSellerOrders("PAID");
-        setPendingFulfillments(sellerOrders);
+        const sellerOrders = await orderService.getMySales();
+        setPendingFulfillments(sellerOrders.filter((o) => o.status === "PAID"));
       } catch {
         setPendingFulfillments([]);
       }
 
-      // Load buyer's active orders (requires GET /order/buyer/me on backend)
+      // Load buyer's active orders
       try {
-        const buyerOrders = await orderService.getBuyerOrders();
+        const buyerOrders = await orderService.getMyPurchases();
         setActiveBuyerOrders(
           buyerOrders.filter(
             (o) => o.status === "PENDING" || o.status === "PAID",
@@ -466,6 +467,19 @@ export default function AccountPage() {
                 {/* Listings Tab */}
                 {activeTab === "listings" && (
                   <div>
+                    {userListings.length > 0 && (
+                      <div className="flex justify-end mb-4">
+                        <Link
+                          href="/create-listing?from=account"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-[#232C64] text-white text-sm font-semibold rounded-lg hover:bg-[#1a2350] transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                            <path d="M12 4v16m8-8H4" />
+                          </svg>
+                          New Listing
+                        </Link>
+                      </div>
+                    )}
                     {userListings.length === 0 ? (
                       <div className="text-center py-16">
                         <div className="mx-auto w-24 h-24 bg-linear-to-br from-[#232C64] to-[#2d3a7a] rounded-full flex items-center justify-center mb-4 shadow-lg">
@@ -489,7 +503,7 @@ export default function AccountPage() {
                           today!
                         </p>
                         <button
-                          onClick={() => router.push("/create-listing")}
+                          onClick={() => router.push("/create-listing?from=account")}
                           className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-[#232C64] to-[#2d3a7a] text-white rounded-lg hover:shadow-lg transition-all transform hover:scale-105"
                         >
                           <svg
@@ -711,9 +725,10 @@ export default function AccountPage() {
                         </h3>
                         <div className="space-y-3">
                           {activeBuyerOrders.map((order) => (
-                            <div
+                            <Link
                               key={order.orderId}
-                              className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4 flex justify-between items-center"
+                              href={`/orders/${order.orderId}`}
+                              className="flex justify-between items-center bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4 hover:border-amber-400 dark:hover:border-amber-500 hover:shadow-sm transition-all"
                             >
                               <div>
                                 <p className="font-semibold text-slate-900 dark:text-white">
@@ -732,10 +747,13 @@ export default function AccountPage() {
                                   {order.status}
                                 </span>
                               </div>
-                              <span className="text-lg font-bold text-[#232C64] dark:text-white">
-                                ${order.amount.toFixed(2)}
-                              </span>
-                            </div>
+                              <div className="flex items-center gap-3">
+                                <span className="text-lg font-bold text-[#232C64] dark:text-white">
+                                  ${order.amount.toFixed(2)}
+                                </span>
+                                <span className="text-xs text-slate-400 dark:text-slate-500">&rarr;</span>
+                              </div>
+                            </Link>
                           ))}
                         </div>
                       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { apiClient } from "@/lib/api";
 import { API_ENDPOINTS } from "@/lib/constants";
 import type { User } from "@/types/auth.types";
@@ -36,6 +36,8 @@ interface ListingFormData {
 
 export function ListingForm({ user }: ListingFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get('from') === 'account' ? '/account' : '/listings';
   const [categories, setCategories] = useState<Category[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [images, setImages] = useState<File[]>([]);
@@ -164,6 +166,8 @@ export function ListingForm({ user }: ListingFormProps) {
         itemDto.deadline = parseDeadlineForBackend(deadlineInput);
       }
 
+      console.log("[ListingForm] Submitting item DTO:", JSON.stringify(itemDto, null, 2));
+
       let response;
 
       if (images.length > 0) {
@@ -193,11 +197,10 @@ export function ListingForm({ user }: ListingFormProps) {
 
       console.log("Listing created successfully:", response);
 
-      // Redirect to listings page
-      router.push("/listings");
+      router.push(returnTo);
     } catch (err) {
-      console.error("Error creating listing:", err);
       const apiError = err as ApiError;
+      console.error("Error creating listing:", { message: apiError.message, status: apiError.status, error: apiError.error, fieldErrors: apiError.fieldErrors, full: apiError });
 
       // Extract field-level errors if present
       if (apiError.fieldErrors) {

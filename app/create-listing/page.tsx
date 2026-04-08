@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
@@ -44,7 +44,9 @@ export default function CreateListingPage() {
         </div>
 
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md p-6">
-          <ListingForm user={user} />
+          <Suspense>
+            <ListingForm user={user} />
+          </Suspense>
         </div>
       </main>
     </div>

@@ -58,6 +58,21 @@ export default function Header() {
     closeMenu();
   };
 
+  const handlePurchasesClick = () => {
+    router.push('/orders/purchases');
+    closeMenu();
+  };
+
+  const handleSalesClick = () => {
+    router.push('/orders/sales');
+    closeMenu();
+  };
+
+  const handleSellerSetupClick = () => {
+    router.push('/seller/stripe/setup');
+    closeMenu();
+  };
+
   return (
     <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -182,6 +197,60 @@ export default function Header() {
                           <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                         </svg>
                         <span>My Favorites</span>
+                      </button>
+
+                      <button
+                        onClick={handlePurchasesClick}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all group"
+                      >
+                        <svg
+                          className="w-5 h-5 text-slate-500 dark:text-slate-400 group-hover:text-[#232C64] dark:group-hover:text-white transition-colors"
+                          fill="none"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                        <span>My Purchases</span>
+                      </button>
+
+                      <button
+                        onClick={handleSalesClick}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all group"
+                      >
+                        <svg
+                          className="w-5 h-5 text-slate-500 dark:text-slate-400 group-hover:text-[#232C64] dark:group-hover:text-white transition-colors"
+                          fill="none"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
+                        </svg>
+                        <span>My Sales</span>
+                      </button>
+
+                      <button
+                        onClick={handleSellerSetupClick}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all group"
+                      >
+                        <svg
+                          className="w-5 h-5 text-slate-500 dark:text-slate-400 group-hover:text-[#232C64] dark:group-hover:text-white transition-colors"
+                          fill="none"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                        <span>Seller Setup</span>
                       </button>
 
                       <button

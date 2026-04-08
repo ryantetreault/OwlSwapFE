@@ -52,12 +52,16 @@ export const API_ENDPOINTS = {
     PURCHASE: (itemId: number) => `/transaction/purchase/${itemId}`, // Buyer from JWT
   },
   ORDERS: {
-    CREATE: '/order/create',
-    CANCEL: (orderId: number) => `/order/${orderId}/cancel`,
-    PAY: (orderId: number) => `/order/${orderId}/pay`,
-    FULFILL: (orderId: number) => `/order/${orderId}/fulfill`,
-    SELLER_ORDERS: '/order/seller/me',
-    BUYER_ORDERS: '/order/buyer/me',
+    CREATE:           '/orders/create',
+    CANCEL:           (orderId: number) => `/orders/${orderId}/cancel`,
+    FULFILL:          (orderId: number) => `/orders/${orderId}/fulfill`,
+    CHECKOUT_SESSION: (orderId: number) => `/orders/${orderId}/checkout-session`,
+    MY_PURCHASES:     '/orders/my-purchases',
+    MY_SALES:         '/orders/my-sales',
+  },
+  STRIPE: {
+    ONBOARDING_LINK: '/stripe/connect/onboarding-link',
+    SELLER_STATUS:   '/stripe/connect/status',
   },
 } as const;
 

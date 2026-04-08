@@ -5,94 +5,101 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import CountdownTimer from '@/components/CountdownTimer';
+import { useAuth } from '@/hooks/useAuth';
 import { orderService } from '@/lib/services/order.service';
+import { extractApiError } from '@/lib/utils/order';
 import type { OrderDto } from '@/types/order.types';
-import type { ApiError } from '@/types/api.types';
-
-const PENDING_ORDER_KEY = 'owlswap_pending_order';
 
 export default function CheckoutPage() {
   const { orderId } = useParams<{ orderId: string }>();
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
 
   const [order, setOrder] = useState<OrderDto | null>(null);
   const [expired, setExpired] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [paying, setPaying] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [missingOrder, setMissingOrder] = useState(false);
+  const [notFound, setNotFound] = useState(false);
 
-  // Load the order from sessionStorage (placed there by the item detail page)
   useEffect(() => {
-    const raw = sessionStorage.getItem(PENDING_ORDER_KEY);
-    if (!raw) {
-      setMissingOrder(true);
+    if (!authLoading && !user) {
+      router.push('/signin');
       return;
     }
-    try {
-      const parsed: OrderDto = JSON.parse(raw);
-      if (String(parsed.orderId) !== orderId) {
-        setMissingOrder(true);
-        return;
-      }
-      setOrder(parsed);
-    } catch {
-      setMissingOrder(true);
+    if (!authLoading && user) {
+      orderService
+        .getMyPurchases()
+        .then((orders) => {
+          const found = orders.find((o) => o.orderId === Number(orderId));
+          if (!found) {
+            setNotFound(true);
+            return;
+          }
+          setOrder(found);
+          if (found.status !== 'PENDING') {
+            // Show non-pending state; no expiry check needed
+          }
+        })
+        .catch(() => setError('Failed to load order. Please try again.'))
+        .finally(() => setLoading(false));
     }
-  }, [orderId]);
-
-  const clearPendingOrder = () => sessionStorage.removeItem(PENDING_ORDER_KEY);
+  }, [orderId, user, authLoading, router]);
 
   const handlePay = async () => {
-    if (expired || loading) return;
-    setLoading(true);
+    if (!order || expired || paying) return;
+    setPaying(true);
     setError(null);
-
+    const sessionKey = `stripe_session_${order.orderId}`;
     try {
-      await orderService.payOrder(Number(orderId));
-      clearPendingOrder();
-      router.push(`/order-success?orderId=${orderId}`);
+      const session = await orderService.createCheckoutSession(order.orderId);
+      sessionStorage.setItem(sessionKey, session.url);
+      window.location.href = session.url; // full browser redirect to Stripe
     } catch (err) {
-      const apiErr = err as ApiError;
-      const msg = apiErr.message ?? '';
-
-      if (msg.toLowerCase().includes('expired')) {
-        setExpired(true);
-        setError('Your reservation expired before payment could complete. The item is available again.');
-      } else if (apiErr.status === 403) {
-        setError("You don't have permission to pay this order.");
-      } else {
-        setError(msg || 'Payment failed. Please try again.');
+      const message = extractApiError(err);
+      if (message.toLowerCase().includes('checkout session already exists')) {
+        const storedUrl = sessionStorage.getItem(sessionKey);
+        if (storedUrl) {
+          window.location.href = storedUrl;
+          return;
+        }
       }
-    } finally {
-      setLoading(false);
+      setError(message);
+      setPaying(false);
     }
   };
 
   const handleCancel = async () => {
-    if (loading) return;
-    setLoading(true);
+    if (!order || cancelling) return;
+    setCancelling(true);
     setError(null);
-
     try {
-      await orderService.cancelOrder(Number(orderId));
-      clearPendingOrder();
+      await orderService.cancelOrder(order.orderId);
       router.push('/listings');
     } catch (err) {
-      const apiErr = err as ApiError;
-      if (apiErr.status === 400) {
-        setError(apiErr.message || 'This order can no longer be cancelled.');
-      } else {
-        setError('Could not cancel the order. Please try again.');
-      }
-    } finally {
-      setLoading(false);
+      setError(extractApiError(err));
+      setCancelling(false);
     }
   };
 
   const handleExpire = () => setExpired(true);
 
-  // Shown when there's no valid order in sessionStorage
-  if (missingOrder) {
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-slate-50 to-blue-100 dark:from-[#1a1f3a] dark:via-[#0f1220] dark:to-[#232C64]">
+        <Header />
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="mb-4 inline-block h-12 w-12 animate-spin rounded-full border-4 border-[#232C64] border-t-transparent" />
+            <p className="text-slate-600 dark:text-slate-300">Loading order...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (notFound) {
     return (
       <div className="min-h-screen bg-linear-to-br from-blue-50 via-slate-50 to-blue-100 dark:from-[#1a1f3a] dark:via-[#0f1220] dark:to-[#232C64]">
         <Header />
@@ -107,6 +114,28 @@ export default function CheckoutPage() {
             Browse Listings
           </Link>
         </div>
+      </div>
+    );
+  }
+
+  // Non-pending order (already paid, cancelled, etc.)
+  if (order && order.status !== 'PENDING') {
+    return (
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-slate-50 to-blue-100 dark:from-[#1a1f3a] dark:via-[#0f1220] dark:to-[#232C64]">
+        <Header />
+        <main className="mx-auto max-w-lg px-4 py-12 sm:px-6">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8 space-y-4 text-center">
+            <p className="text-slate-700 dark:text-slate-300">
+              This order is <span className="font-semibold">{order.status.toLowerCase()}</span> and cannot be paid.
+            </p>
+            <Link
+              href="/orders/purchases"
+              className="inline-block px-5 py-2.5 bg-[#232C64] text-white font-semibold rounded-xl hover:bg-[#1a2350] transition-colors"
+            >
+              View My Purchases
+            </Link>
+          </div>
+        </main>
       </div>
     );
   }
@@ -140,7 +169,7 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-600 dark:text-slate-400">Status</span>
-                <span className="font-semibold text-slate-900 dark:text-white">{order.status}</span>
+                <span className="font-semibold text-slate-900 dark:text-white capitalize">{order.status.toLowerCase()}</span>
               </div>
               <div className="flex justify-between items-baseline border-t border-slate-200 dark:border-slate-600 pt-2 mt-2">
                 <span className="text-slate-600 dark:text-slate-400 font-medium">Total</span>
@@ -165,13 +194,13 @@ export default function CheckoutPage() {
           {expired && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg px-4 py-3">
               <p className="text-sm font-medium text-red-700 dark:text-red-400">
-                Your reservation has expired. The item is available again.
+                Your reservation has expired. Please return to the listing to try again.
               </p>
             </div>
           )}
 
           {/* Error message */}
-          {error && !expired && (
+          {error && (
             <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
           )}
 
@@ -179,13 +208,13 @@ export default function CheckoutPage() {
           <div className="flex flex-col gap-3 pt-2">
             <button
               onClick={handlePay}
-              disabled={loading || expired}
+              disabled={paying || expired}
               className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-[#232C64] dark:bg-[#2d3a7a] text-white font-semibold rounded-xl hover:bg-[#1a2350] dark:hover:bg-[#232C64] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
             >
-              {loading ? (
+              {paying ? (
                 <>
                   <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Processing...
+                  Redirecting to Stripe...
                 </>
               ) : (
                 'Pay Now'
@@ -195,10 +224,10 @@ export default function CheckoutPage() {
             {!expired && (
               <button
                 onClick={handleCancel}
-                disabled={loading}
+                disabled={cancelling}
                 className="w-full px-6 py-3 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                Cancel Order
+                {cancelling ? 'Cancelling...' : 'Cancel Order'}
               </button>
             )}
 
@@ -212,9 +241,8 @@ export default function CheckoutPage() {
             )}
           </div>
 
-          {/* Stripe note */}
           <p className="text-xs text-center text-slate-400 dark:text-slate-500">
-            Payment processing is simulated. Stripe integration coming soon.
+            Powered by Stripe — your payment info is never stored on OwlSwap.
           </p>
         </div>
       </main>

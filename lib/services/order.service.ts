@@ -1,6 +1,11 @@
 import { apiClient } from '../api';
 import { API_ENDPOINTS } from '../constants';
-import type { OrderDto, OrderStatus } from '@/types/order.types';
+import type {
+  OrderDto,
+  StripeCheckoutSessionDto,
+  StripeOnboardingLinkDto,
+  StripeSellerStatusDto,
+} from '@/types/order.types';
 
 export const orderService = {
   /**
@@ -19,14 +24,6 @@ export const orderService = {
   },
 
   /**
-   * Mark a PENDING order as paid (buyer only).
-   * TEMPORARY — will be replaced by a Stripe webhook when Stripe is integrated.
-   */
-  payOrder: async (orderId: number): Promise<OrderDto> => {
-    return apiClient.post<OrderDto>(API_ENDPOINTS.ORDERS.PAY(orderId), undefined, true);
-  },
-
-  /**
    * Mark a PAID order as fulfilled (seller only).
    */
   fulfillOrder: async (orderId: number): Promise<OrderDto> => {
@@ -34,22 +31,48 @@ export const orderService = {
   },
 
   /**
-   * Get all orders where the JWT-authenticated user is the seller.
-   * Optionally filter by status (e.g. 'PAID' to see orders awaiting fulfillment).
-   * NOTE: Requires GET /order/seller/me on the backend (not yet implemented).
+   * Create a Stripe Checkout session for a PENDING order.
+   * Use session.url to redirect the buyer to Stripe.
    */
-  getSellerOrders: async (status?: OrderStatus): Promise<OrderDto[]> => {
-    const endpoint = status
-      ? `${API_ENDPOINTS.ORDERS.SELLER_ORDERS}?status=${status}`
-      : API_ENDPOINTS.ORDERS.SELLER_ORDERS;
-    return apiClient.get<OrderDto[]>(endpoint, true);
+  createCheckoutSession: async (orderId: number): Promise<StripeCheckoutSessionDto> => {
+    return apiClient.post<StripeCheckoutSessionDto>(
+      API_ENDPOINTS.ORDERS.CHECKOUT_SESSION(orderId),
+      undefined,
+      true
+    );
   },
 
   /**
    * Get all orders where the JWT-authenticated user is the buyer.
-   * NOTE: Requires GET /order/buyer/me on the backend (not yet implemented).
    */
-  getBuyerOrders: async (): Promise<OrderDto[]> => {
-    return apiClient.get<OrderDto[]>(API_ENDPOINTS.ORDERS.BUYER_ORDERS, true);
+  getMyPurchases: async (): Promise<OrderDto[]> => {
+    return apiClient.get<OrderDto[]>(API_ENDPOINTS.ORDERS.MY_PURCHASES, true);
+  },
+
+  /**
+   * Get all orders where the JWT-authenticated user is the seller.
+   */
+  getMySales: async (): Promise<OrderDto[]> => {
+    return apiClient.get<OrderDto[]>(API_ENDPOINTS.ORDERS.MY_SALES, true);
+  },
+
+  /**
+   * Get a Stripe Connect onboarding link for the current seller.
+   * Redirects seller to Stripe Express to complete onboarding.
+   */
+  getStripeOnboardingLink: async (): Promise<string> => {
+    const res = await apiClient.post<StripeOnboardingLinkDto>(
+      API_ENDPOINTS.STRIPE.ONBOARDING_LINK,
+      undefined,
+      true
+    );
+    return res.url;
+  },
+
+  /**
+   * Get the current seller's Stripe Connect status.
+   */
+  getStripeSellerStatus: async (): Promise<StripeSellerStatusDto> => {
+    return apiClient.get<StripeSellerStatusDto>(API_ENDPOINTS.STRIPE.SELLER_STATUS, true);
   },
 };

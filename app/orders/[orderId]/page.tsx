@@ -1,0 +1,254 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
+import Header from '@/components/Header';
+import { useAuth } from '@/hooks/useAuth';
+import { orderService } from '@/lib/services/order.service';
+import { ORDER_STATUS_META, extractApiError, secondsUntilExpiry, formatCountdown } from '@/lib/utils/order';
+import type { OrderDto } from '@/types/order.types';
+
+export default function OrderDetailPage() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
+  const params = useParams();
+  const orderId = Number(params.orderId);
+
+  const [order, setOrder] = useState<OrderDto | null>(null);
+  const [role, setRole] = useState<'buyer' | 'seller' | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [countdown, setCountdown] = useState<number>(0);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/signin');
+      return;
+    }
+    if (!authLoading && user) {
+      Promise.all([
+        orderService.getMyPurchases().catch(() => [] as OrderDto[]),
+        orderService.getMySales().catch(() => [] as OrderDto[]),
+      ]).then(([purchases, sales]) => {
+        const purchase = purchases.find((o) => o.orderId === orderId);
+        if (purchase) {
+          setOrder(purchase);
+          setRole('buyer');
+          return;
+        }
+        const sale = sales.find((o) => o.orderId === orderId);
+        if (sale) {
+          setOrder(sale);
+          setRole('seller');
+          return;
+        }
+        setError('Order not found.');
+      }).catch(() => {
+        setError('Failed to load order. Please try again.');
+      }).finally(() => setLoading(false));
+    }
+  }, [user, authLoading, router, orderId]);
+
+  // Countdown timer for PENDING orders
+  useEffect(() => {
+    if (!order || order.status !== 'PENDING' || !order.reservedUntil) return;
+    setCountdown(secondsUntilExpiry(order.reservedUntil));
+    const interval = setInterval(() => {
+      setCountdown(secondsUntilExpiry(order.reservedUntil!));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [order]);
+
+  async function handleResumePay() {
+    if (!order) return;
+    setActionLoading(true);
+    setError(null);
+    try {
+      const session = await orderService.createCheckoutSession(order.orderId);
+      window.location.href = session.url;
+    } catch (err) {
+      setError(extractApiError(err));
+      setActionLoading(false);
+    }
+  }
+
+  async function handleCancel() {
+    if (!order || !confirm('Cancel this order?')) return;
+    setActionLoading(true);
+    setError(null);
+    try {
+      const updated = await orderService.cancelOrder(order.orderId);
+      setOrder(updated);
+    } catch (err) {
+      setError(extractApiError(err));
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleFulfill() {
+    if (!order) return;
+    setActionLoading(true);
+    setError(null);
+    try {
+      const updated = await orderService.fulfillOrder(order.orderId);
+      setOrder(updated);
+    } catch (err) {
+      setError(extractApiError(err));
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-slate-50 to-blue-100 dark:from-[#1a1f3a] dark:via-[#0f1220] dark:to-[#232C64]">
+        <Header />
+        <div className="flex items-center justify-center h-96">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-[#232C64] border-t-transparent" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !order) {
+    return (
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-slate-50 to-blue-100 dark:from-[#1a1f3a] dark:via-[#0f1220] dark:to-[#232C64]">
+        <Header />
+        <main className="mx-auto max-w-2xl px-4 py-8">
+          <p className="text-red-600 dark:text-red-400">{error}</p>
+          <Link href="/account" className="mt-4 inline-block text-sm text-[#232C64] dark:text-blue-400 hover:underline">
+            Back to Account
+          </Link>
+        </main>
+      </div>
+    );
+  }
+
+  if (!order) return null;
+
+  const meta = ORDER_STATUS_META[order.status];
+  const backHref = role === 'buyer' ? '/orders/purchases' : '/orders/sales';
+
+  return (
+    <div className="min-h-screen bg-linear-to-br from-blue-50 via-slate-50 to-blue-100 dark:from-[#1a1f3a] dark:via-[#0f1220] dark:to-[#232C64]">
+      <Header />
+
+      <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
+        {/* Back link */}
+        <Link
+          href={backHref}
+          className="inline-flex items-center gap-1 text-sm text-[#232C64] dark:text-blue-400 hover:underline mb-6"
+        >
+          &larr; {role === 'buyer' ? 'My Purchases' : 'My Sales'}
+        </Link>
+
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg overflow-hidden">
+          {/* Header band */}
+          <div className="bg-[#232C64] dark:bg-[#1a2350] px-6 py-5">
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-bold text-white">Order #{order.orderId}</h1>
+              <span className={`text-sm font-semibold px-3 py-1 rounded-full bg-white/15 ${meta.colour.replace('text-', 'text-white')}`}>
+                {meta.label}
+              </span>
+            </div>
+          </div>
+
+          {/* Details */}
+          <div className="px-6 py-6 space-y-5">
+            {error && (
+              <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+            )}
+
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
+              <div>
+                <dt className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Status</dt>
+                <dd className={`mt-1 text-sm font-semibold ${meta.colour}`}>{meta.label}</dd>
+              </div>
+
+              <div>
+                <dt className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Amount</dt>
+                <dd className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
+                  ${order.amount.toFixed(2)} {order.currency}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Item</dt>
+                <dd className="mt-1 text-sm text-slate-700 dark:text-slate-300">
+                  <Link
+                    href={`/listings/${order.itemId}`}
+                    className="text-[#232C64] dark:text-blue-400 hover:underline"
+                  >
+                    View Listing #{order.itemId}
+                  </Link>
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                  {role === 'buyer' ? 'Your Role' : 'Your Role'}
+                </dt>
+                <dd className="mt-1 text-sm font-medium text-slate-700 dark:text-slate-300 capitalize">
+                  {role}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Placed</dt>
+                <dd className="mt-1 text-sm text-slate-700 dark:text-slate-300">
+                  {new Date(order.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric', month: 'long', day: 'numeric',
+                  })}
+                </dd>
+              </div>
+
+              {order.status === 'PENDING' && order.reservedUntil && (
+                <div>
+                  <dt className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Reserved For</dt>
+                  <dd className={`mt-1 text-sm font-semibold tabular-nums ${countdown <= 60 ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'}`}>
+                    {countdown > 0 ? formatCountdown(countdown) : 'Expired'}
+                  </dd>
+                </div>
+              )}
+            </dl>
+
+            {/* Actions */}
+            {role === 'buyer' && order.status === 'PENDING' && (
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleResumePay}
+                  disabled={actionLoading || countdown <= 0}
+                  className="flex-1 px-4 py-2.5 bg-[#232C64] text-white text-sm font-semibold rounded-xl hover:bg-[#1a2350] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {actionLoading ? 'Redirecting...' : 'Complete Payment'}
+                </button>
+                <button
+                  onClick={handleCancel}
+                  disabled={actionLoading}
+                  className="px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-sm font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Cancel Order
+                </button>
+              </div>
+            )}
+
+            {role === 'seller' && order.status === 'PAID' && (
+              <div className="pt-2">
+                <button
+                  onClick={handleFulfill}
+                  disabled={actionLoading}
+                  className="w-full px-4 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {actionLoading ? 'Marking...' : 'Mark as Fulfilled'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}

@@ -11,8 +11,6 @@ import { orderService } from '@/lib/services/order.service';
 import type { Listing } from '@/types/listing.types';
 import type { ApiError } from '@/types/api.types';
 
-const PENDING_ORDER_KEY = 'owlswap_pending_order';
-
 function getImageSrc(image: Listing['images'][0]): string {
   if (typeof image.image_date === 'string') {
     return `data:${image.image_type};base64,${image.image_date}`;
@@ -94,12 +92,13 @@ export default function ItemDetailPage() {
 
     try {
       const order = await orderService.createOrder(listing.itemId);
-      sessionStorage.setItem(PENDING_ORDER_KEY, JSON.stringify(order));
       router.push(`/checkout/${order.orderId}`);
     } catch (err) {
       const apiErr = err as ApiError;
       if (apiErr.status === 409) {
         setBuyError('This item was just reserved by someone else. Try again shortly.');
+      } else if (apiErr.status === 403 && apiErr.message?.toLowerCase().includes('email verification')) {
+        setBuyError('Please verify your email before purchasing items.');
       } else if (apiErr.status === 403) {
         setBuyError("You can't purchase your own listing.");
       } else {

@@ -21,8 +21,7 @@ export function formatReleaseDate(date: Date): string {
 }
 
 /**
- * Convert an HTML date input value (YYYY-MM-DD) to backend deadline format (YYYY/MM/DD with slashes).
- * Used specifically for Request items' deadline field.
+
  *
  * @param inputValue - Date string from HTML input in YYYY-MM-DD format
  * @returns Date string in YYYY/MM/DD format for backend

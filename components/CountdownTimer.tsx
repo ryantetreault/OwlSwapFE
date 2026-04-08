@@ -1,14 +1,17 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 interface CountdownTimerProps {
-  /** ISO datetime string from the server — source of truth for when reservation expires */
+  // ISO datetime string from the server — source of truth for when reservation expires
   reservedUntil: string;
   onExpire?: () => void;
 }
 
-export default function CountdownTimer({ reservedUntil, onExpire }: CountdownTimerProps) {
+export default function CountdownTimer({
+  reservedUntil,
+  onExpire,
+}: CountdownTimerProps) {
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
 
   useEffect(() => {
@@ -39,13 +42,17 @@ export default function CountdownTimer({ reservedUntil, onExpire }: CountdownTim
     );
   }
 
-  const mins = Math.floor(secondsLeft / 60).toString().padStart(2, '0');
-  const secs = (secondsLeft % 60).toString().padStart(2, '0');
+  const mins = Math.floor(secondsLeft / 60)
+    .toString()
+    .padStart(2, "0");
+  const secs = (secondsLeft % 60).toString().padStart(2, "0");
   const isUrgent = secondsLeft <= 15;
 
   return (
-    <p className={`text-sm font-medium ${isUrgent ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-300'}`}>
-      Item reserved for:{' '}
+    <p
+      className={`text-sm font-medium ${isUrgent ? "text-red-600 dark:text-red-400" : "text-slate-700 dark:text-slate-300"}`}
+    >
+      Item reserved for:{" "}
       <strong className="font-bold tabular-nums">
         {mins}:{secs}
       </strong>

@@ -4,7 +4,7 @@ import type { Transaction, PaginatedTransactionsResponse } from '@/types/transac
 
 export const transactionsService = {
   /**
-   * Get all transactions (admin only, likely)
+   * Get all transactions (admin only)
    */
   getAllTransactions: async (): Promise<Transaction[]> => {
     return apiClient.get<Transaction[]>(

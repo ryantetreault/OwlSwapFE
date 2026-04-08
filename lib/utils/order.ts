@@ -7,7 +7,7 @@ export function secondsUntilExpiry(reservedUntil: string | null): number {
   return Math.floor((new Date(reservedUntil).getTime() - Date.now()) / 1000);
 }
 
-/** Human-readable countdown string: "14:32" */
+/** readable countdown string: "14:32" */
 export function formatCountdown(seconds: number): string {
   if (seconds <= 0) return '0:00';
   const m = Math.floor(seconds / 60);
@@ -15,7 +15,7 @@ export function formatCountdown(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-/** Label and Tailwind colour class for each order status */
+/** Label and Tailwind color class for each order status */
 export const ORDER_STATUS_META: Record<
   OrderStatus,
   { label: string; colour: string }

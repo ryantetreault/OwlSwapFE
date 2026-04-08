@@ -14,7 +14,7 @@ export interface OrderDto {
   amount: number;
   currency: string;
   status: OrderStatus;
-  /** ISO datetime — only meaningful when status === 'PENDING' */
+  // ISO datetime — only meaningful when status === 'PENDING'
   reservedUntil: string | null;
   createdAt: string;
 }

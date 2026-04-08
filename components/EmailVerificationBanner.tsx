@@ -62,7 +62,7 @@ export default function EmailVerificationBanner() {
   // Show only when: user is logged in, not dismissed, and either explicitly unverified
   // (backend returned isEmailVerified: false) or forced by a 403/FORBIDDEN event.
   // When isEmailVerified is undefined (backend doesn't return the field), stay hidden
-  // until a 403 event fires.
+  // until a 403 event occurs.
   if (
     !user ||
     dismissed ||

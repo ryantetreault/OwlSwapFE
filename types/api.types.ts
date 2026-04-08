@@ -1,7 +1,7 @@
 export interface ApiError {
   message: string;
   status: number;
-  error?: string;                        // Backend error code (e.g., "VALIDATION_FAILED")
+  error?: string;                        // Backend error code (ex., "VALIDATION_FAILED")
   path?: string;                         // Request path
   timestamp?: string;                    // ISO timestamp
   errors?: Record<string, string[]>;     // Keep for backwards compatibility

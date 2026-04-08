@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
+import RateSellerModal from '@/components/RateSellerModal';
 import { useAuth } from '@/hooks/useAuth';
 import { orderService } from '@/lib/services/order.service';
 import { ORDER_STATUS_META, extractApiError, secondsUntilExpiry, formatCountdown } from '@/lib/utils/order';
@@ -21,6 +22,8 @@ export default function OrderDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [countdown, setCountdown] = useState<number>(0);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [hasRated, setHasRated] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -50,6 +53,11 @@ export default function OrderDetailPage() {
       }).finally(() => setLoading(false));
     }
   }, [user, authLoading, router, orderId]);
+
+  useEffect(() => {
+    if (!order) return;
+    if (localStorage.getItem(`owlswap_rated_${orderId}`)) setHasRated(true);
+  }, [order, orderId]);
 
   // Countdown timer for PENDING orders
   useEffect(() => {
@@ -235,6 +243,29 @@ export default function OrderDetailPage() {
               </div>
             )}
 
+            {role === 'buyer' && (order.status === 'PAID' || order.status === 'FULFILLED') && (
+              <div className="pt-2">
+                {hasRated ? (
+                  <div className="flex items-center gap-1.5 text-sm font-medium text-green-600 dark:text-green-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Seller rated
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowRatingModal(true)}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-400 hover:bg-amber-500 dark:bg-amber-500 dark:hover:bg-amber-400 text-white text-sm font-semibold rounded-xl transition-colors"
+                  >
+                    <svg className="w-4 h-4 fill-white" viewBox="0 0 24 24">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                    Rate Seller
+                  </button>
+                )}
+              </div>
+            )}
+
             {role === 'seller' && order.status === 'PAID' && (
               <div className="pt-2">
                 <button
@@ -249,6 +280,15 @@ export default function OrderDetailPage() {
           </div>
         </div>
       </main>
+
+      {showRatingModal && order && (
+        <RateSellerModal
+          sellerId={order.sellerId}
+          orderId={order.orderId}
+          onClose={() => setShowRatingModal(false)}
+          onRated={() => setHasRated(true)}
+        />
+      )}
     </div>
   );
 }

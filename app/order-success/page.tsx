@@ -30,7 +30,7 @@ function OrderSuccessContent() {
           </div>
 
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+            <h1 className="text-2xl font-bold text-green-600 dark:text-green-400">
               Payment Confirmed!
             </h1>
             {orderId && (

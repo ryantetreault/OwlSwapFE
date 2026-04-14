@@ -120,7 +120,7 @@ function CheckoutSuccessContent() {
           </div>
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Payment Confirmed!</h1>
+          <h1 className="text-2xl font-bold text-green-600 dark:text-green-400">Payment Confirmed!</h1>
           <p className="text-slate-600 dark:text-slate-400 mt-1">
             Order <span className="font-semibold text-[#232C64] dark:text-blue-400">#{order.orderId}</span> is now{' '}
             <span className="font-semibold capitalize">{order.status.toLowerCase()}</span>.

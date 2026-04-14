@@ -9,6 +9,8 @@ import { orderService } from '@/lib/services/order.service';
 import { ORDER_STATUS_META } from '@/lib/utils/order';
 import type { OrderDto } from '@/types/order.types';
 
+const PENDING_POLL_MS = 5000;
+
 export default function SalesPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -39,6 +41,14 @@ export default function SalesPage() {
       return () => window.removeEventListener('focus', handleFocus);
     }
   }, [user, authLoading, router]);
+
+  // Auto-poll while any order is PENDING so status updates when webhook fires
+  useEffect(() => {
+    const hasPending = orders.some((o) => o.status === 'PENDING');
+    if (!hasPending) return;
+    const id = setInterval(fetchOrders, PENDING_POLL_MS);
+    return () => clearInterval(id);
+  }, [orders]);
 
   if (authLoading || loading) {
     return (

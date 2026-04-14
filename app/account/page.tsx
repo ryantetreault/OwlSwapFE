@@ -58,6 +58,8 @@ export default function AccountPage() {
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [pendingFulfillments, setPendingFulfillments] = useState<OrderDto[]>([]);
   const [activeBuyerOrders, setActiveBuyerOrders] = useState<OrderDto[]>([]);
+  const [fulfilledPurchases, setFulfilledPurchases] = useState<OrderDto[]>([]);
+  const [fulfilledSales, setFulfilledSales] = useState<OrderDto[]>([]);
   const [fulfillLoadingId, setFulfillLoadingId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -135,15 +137,17 @@ export default function AccountPage() {
         setSales([]);
       }
 
-      // Load seller's PAID orders awaiting fulfillment
+      // Load seller's orders
       try {
         const sellerOrders = await orderService.getMySales();
         setPendingFulfillments(sellerOrders.filter((o) => o.status === "PAID"));
+        setFulfilledSales(sellerOrders.filter((o) => o.status === "FULFILLED"));
       } catch {
         setPendingFulfillments([]);
+        setFulfilledSales([]);
       }
 
-      // Load buyer's active orders
+      // Load buyer's orders
       try {
         const buyerOrders = await orderService.getMyPurchases();
         setActiveBuyerOrders(
@@ -151,8 +155,10 @@ export default function AccountPage() {
             (o) => o.status === "PENDING" || o.status === "PAID",
           ),
         );
+        setFulfilledPurchases(buyerOrders.filter((o) => o.status === "FULFILLED"));
       } catch {
         setActiveBuyerOrders([]);
+        setFulfilledPurchases([]);
       }
 
       // TODO: Load ratings when backend endpoint is available
@@ -358,7 +364,7 @@ export default function AccountPage() {
                     : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
-                Purchases ({purchases.length})
+                Purchases ({activeBuyerOrders.length + fulfilledPurchases.length})
               </button>
               <button
                 onClick={() => setActiveTab("sales")}
@@ -368,7 +374,7 @@ export default function AccountPage() {
                     : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
-                Sales ({sales.length})
+                Sales ({pendingFulfillments.length + fulfilledSales.length})
               </button>
               <button
                 onClick={() => setActiveTab("ratings")}
@@ -763,7 +769,7 @@ export default function AccountPage() {
                     <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">
                       Purchase History
                     </h3>
-                    {purchases.length === 0 ? (
+                    {fulfilledPurchases.length === 0 ? (
                       <div className="text-center py-8">
                         <p className="text-slate-600 dark:text-slate-400">
                           No purchase history yet.
@@ -773,31 +779,28 @@ export default function AccountPage() {
                         </p>
                       </div>
                     ) : (
-                      <div className="space-y-4">
-                        {purchases.map((purchase) => (
-                          <div
-                            key={purchase.purchaseId}
-                            className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4"
+                      <div className="space-y-3">
+                        {fulfilledPurchases.map((order) => (
+                          <Link
+                            key={order.orderId}
+                            href={`/orders/${order.orderId}`}
+                            className="flex justify-between items-center bg-slate-50 dark:bg-slate-700 rounded-lg p-4 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
                           >
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h4 className="font-semibold text-slate-900 dark:text-white">
-                                  {purchase.itemName}
-                                </h4>
-                                <p className="text-sm text-slate-600 dark:text-slate-400">
-                                  Seller: {purchase.sellerName}
-                                </p>
-                                <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
-                                  {new Date(
-                                    purchase.purchaseDate,
-                                  ).toLocaleDateString()}
-                                </p>
-                              </div>
-                              <span className="text-lg font-bold text-[#232C64] dark:text-white">
-                                ${purchase.price.toFixed(2)}
-                              </span>
+                            <div>
+                              <p className="font-semibold text-slate-900 dark:text-white">
+                                Order #{order.orderId}
+                              </p>
+                              <p className="text-sm text-slate-600 dark:text-slate-400">
+                                Item #{order.itemId}
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
+                                {new Date(order.createdAt).toLocaleDateString()}
+                              </p>
                             </div>
-                          </div>
+                            <span className="text-lg font-bold text-[#232C64] dark:text-white">
+                              ${order.amount.toFixed(2)}
+                            </span>
+                          </Link>
                         ))}
                       </div>
                     )}
@@ -862,7 +865,7 @@ export default function AccountPage() {
                     <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">
                       Sales History
                     </h3>
-                    {sales.length === 0 ? (
+                    {fulfilledSales.length === 0 ? (
                       <div className="text-center py-8">
                         <p className="text-slate-600 dark:text-slate-400">
                           No sales yet.
@@ -872,29 +875,28 @@ export default function AccountPage() {
                         </p>
                       </div>
                     ) : (
-                      <div className="space-y-4">
-                        {sales.map((sale) => (
-                          <div
-                            key={sale.saleId}
-                            className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4"
+                      <div className="space-y-3">
+                        {fulfilledSales.map((order) => (
+                          <Link
+                            key={order.orderId}
+                            href={`/orders/${order.orderId}`}
+                            className="flex justify-between items-center bg-slate-50 dark:bg-slate-700 rounded-lg p-4 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
                           >
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h4 className="font-semibold text-slate-900 dark:text-white">
-                                  {sale.itemName}
-                                </h4>
-                                <p className="text-sm text-slate-600 dark:text-slate-400">
-                                  Buyer: {sale.buyerName}
-                                </p>
-                                <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
-                                  {new Date(sale.saleDate).toLocaleDateString()}
-                                </p>
-                              </div>
-                              <span className="text-lg font-bold text-[#232C64] dark:text-white">
-                                ${sale.price.toFixed(2)}
-                              </span>
+                            <div>
+                              <p className="font-semibold text-slate-900 dark:text-white">
+                                Order #{order.orderId}
+                              </p>
+                              <p className="text-sm text-slate-600 dark:text-slate-400">
+                                Item #{order.itemId}
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
+                                {new Date(order.createdAt).toLocaleDateString()}
+                              </p>
                             </div>
-                          </div>
+                            <span className="text-lg font-bold text-[#232C64] dark:text-white">
+                              ${order.amount.toFixed(2)}
+                            </span>
+                          </Link>
                         ))}
                       </div>
                     )}

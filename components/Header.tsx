@@ -68,6 +68,11 @@ export default function Header() {
     closeMenu();
   };
 
+  const handleHomeClick = () => {
+    router.push('/listings');
+    closeMenu();
+  };
+
   const handleSellerSetupClick = () => {
     router.push('/seller/stripe/setup');
     closeMenu();
@@ -163,6 +168,24 @@ export default function Header() {
 
                     {/* Menu Items */}
                     <div className="py-2">
+                      <button
+                        onClick={handleHomeClick}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all group"
+                      >
+                        <svg
+                          className="w-5 h-5 text-slate-500 dark:text-slate-400 group-hover:text-[#232C64] dark:group-hover:text-white transition-colors"
+                          fill="none"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        <span>Browse Listings</span>
+                      </button>
+
                       <button
                         onClick={handleCreateListingClick}
                         className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all group"

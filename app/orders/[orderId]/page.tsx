@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
@@ -9,6 +9,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { orderService } from '@/lib/services/order.service';
 import { ORDER_STATUS_META, extractApiError, secondsUntilExpiry, formatCountdown } from '@/lib/utils/order';
 import type { OrderDto } from '@/types/order.types';
+
+const PENDING_POLL_MS = 5000;
 
 export default function OrderDetailPage() {
   const { user, loading: authLoading } = useAuth();
@@ -21,9 +23,30 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [countdown, setCountdown] = useState<number>(0);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [hasRated, setHasRated] = useState(false);
+
+  const fetchOrder = useCallback(async () => {
+    const [purchases, sales] = await Promise.all([
+      orderService.getMyPurchases().catch(() => [] as OrderDto[]),
+      orderService.getMySales().catch(() => [] as OrderDto[]),
+    ]);
+    const purchase = purchases.find((o) => o.orderId === orderId);
+    if (purchase) {
+      setOrder(purchase);
+      setRole('buyer');
+      return;
+    }
+    const sale = sales.find((o) => o.orderId === orderId);
+    if (sale) {
+      setOrder(sale);
+      setRole('seller');
+      return;
+    }
+    setError('Order not found.');
+  }, [orderId]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -31,28 +54,18 @@ export default function OrderDetailPage() {
       return;
     }
     if (!authLoading && user) {
-      Promise.all([
-        orderService.getMyPurchases().catch(() => [] as OrderDto[]),
-        orderService.getMySales().catch(() => [] as OrderDto[]),
-      ]).then(([purchases, sales]) => {
-        const purchase = purchases.find((o) => o.orderId === orderId);
-        if (purchase) {
-          setOrder(purchase);
-          setRole('buyer');
-          return;
-        }
-        const sale = sales.find((o) => o.orderId === orderId);
-        if (sale) {
-          setOrder(sale);
-          setRole('seller');
-          return;
-        }
-        setError('Order not found.');
-      }).catch(() => {
+      fetchOrder().catch(() => {
         setError('Failed to load order. Please try again.');
       }).finally(() => setLoading(false));
     }
-  }, [user, authLoading, router, orderId]);
+  }, [user, authLoading, router, fetchOrder]);
+
+  // Auto-poll while order is PENDING so status updates when webhook fires
+  useEffect(() => {
+    if (!order || order.status !== 'PENDING') return;
+    const id = setInterval(fetchOrder, PENDING_POLL_MS);
+    return () => clearInterval(id);
+  }, [order?.status, fetchOrder]);
 
   useEffect(() => {
     if (!order) return;
@@ -127,8 +140,8 @@ export default function OrderDetailPage() {
         <Header />
         <main className="mx-auto max-w-2xl px-4 py-8">
           <p className="text-red-600 dark:text-red-400">{error}</p>
-          <Link href="/account" className="mt-4 inline-block text-sm text-[#232C64] dark:text-blue-400 hover:underline">
-            Back to Account
+          <Link href="/account" className="mt-4 inline-flex items-center gap-1 px-3 py-1.5 text-sm font-semibold border border-[#232C64] text-[#232C64] rounded-lg hover:bg-[#232C64] hover:text-white dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-400 dark:hover:text-white transition-colors">
+            &larr; Back to Account
           </Link>
         </main>
       </div>
@@ -148,7 +161,7 @@ export default function OrderDetailPage() {
         {/* Back link */}
         <Link
           href={backHref}
-          className="inline-flex items-center gap-1 text-sm text-[#232C64] dark:text-blue-400 hover:underline mb-6"
+          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-semibold border border-[#232C64] text-[#232C64] rounded-lg hover:bg-[#232C64] hover:text-white dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-400 dark:hover:text-white transition-colors mb-6"
         >
           &larr; {role === 'buyer' ? 'My Purchases' : 'My Sales'}
         </Link>
@@ -239,6 +252,29 @@ export default function OrderDetailPage() {
                   className="px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-sm font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Cancel Order
+                </button>
+              </div>
+            )}
+
+            {role === 'seller' && order.status === 'PENDING' && (
+              <div className="pt-2">
+                <button
+                  onClick={() => {
+                    setRefreshing(true);
+                    const start = Date.now();
+                    fetchOrder().finally(() => {
+                      const elapsed = Date.now() - start;
+                      const remaining = Math.max(0, 600 - elapsed);
+                      setTimeout(() => setRefreshing(false), remaining);
+                    });
+                  }}
+                  disabled={refreshing}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-sm font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {refreshing && (
+                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  )}
+                  {refreshing ? 'Refreshing...' : 'Refresh Status'}
                 </button>
               </div>
             )}

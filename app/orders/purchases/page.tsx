@@ -9,6 +9,8 @@ import { orderService } from '@/lib/services/order.service';
 import { ORDER_STATUS_META } from '@/lib/utils/order';
 import type { OrderDto } from '@/types/order.types';
 
+const PENDING_POLL_MS = 5000;
+
 export default function PurchasesPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -40,6 +42,14 @@ export default function PurchasesPage() {
     }
   }, [user, authLoading, router]);
 
+  // Auto-poll while any order is PENDING so status updates when webhook fires
+  useEffect(() => {
+    const hasPending = orders.some((o) => o.status === 'PENDING');
+    if (!hasPending) return;
+    const id = setInterval(fetchOrders, PENDING_POLL_MS);
+    return () => clearInterval(id);
+  }, [orders]);
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-linear-to-br from-blue-50 via-slate-50 to-blue-100 dark:from-[#1a1f3a] dark:via-[#0f1220] dark:to-[#232C64]">
@@ -60,7 +70,7 @@ export default function PurchasesPage() {
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">My Purchases</h1>
           <Link
             href="/listings"
-            className="text-sm text-[#232C64] dark:text-blue-400 hover:underline"
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-semibold border border-[#232C64] text-[#232C64] rounded-lg hover:bg-[#232C64] hover:text-white dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-400 dark:hover:text-white transition-colors"
           >
             Browse Listings
           </Link>

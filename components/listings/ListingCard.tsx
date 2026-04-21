@@ -7,9 +7,10 @@ interface ListingCardProps {
   listing: Listing;
   isFavorite?: boolean;
   onToggleFavorite?: (itemId: number) => void;
+  onClick?: () => void;
 }
 
-export function ListingCard({ listing, isFavorite, onToggleFavorite }: ListingCardProps) {
+export function ListingCard({ listing, isFavorite, onToggleFavorite, onClick }: ListingCardProps) {
   const formattedPrice = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",

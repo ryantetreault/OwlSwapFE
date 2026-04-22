@@ -1,12 +1,19 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const protectedRoutes = ['/listings'];
+const protectedRoutes = [
+  '/listings',
+  '/account',
+  '/orders',
+  '/checkout',
+  '/create-listing',
+  '/favorites',
+  '/seller',
+];
 const authRoutes = ['/signin', '/signup'];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
   const token = request.cookies.get('owl_swap_auth_token')?.value;
 
   if (protectedRoutes.some(route => pathname.startsWith(route))) {
@@ -27,5 +34,15 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/listings/:path*', '/signin', '/signup'],
+  matcher: [
+    '/listings/:path*',
+    '/account/:path*',
+    '/orders/:path*',
+    '/checkout/:path*',
+    '/create-listing/:path*',
+    '/favorites/:path*',
+    '/seller/:path*',
+    '/signin',
+    '/signup',
+  ],
 };

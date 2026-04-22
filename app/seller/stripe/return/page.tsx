@@ -3,13 +3,24 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
+import { useAuth } from '@/hooks/useAuth';
 import { orderService } from '@/lib/services/order.service';
 
 export default function StripeReturnPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [message, setMessage] = useState('Verifying your Stripe account...');
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      router.push('/signin');
+      return;
+    }
+    if (sessionStorage.getItem('verification_pending') === 'true') {
+      router.push(`/verify-email-sent?email=${encodeURIComponent(user.email)}`);
+      return;
+    }
     orderService.getStripeSellerStatus().then((status) => {
       if (status.onboardingComplete) {
         setMessage('Stripe connected! Redirecting...');
@@ -21,7 +32,7 @@ export default function StripeReturnPage() {
     }).catch(() => {
       router.push('/seller/stripe/setup');
     });
-  }, [router]);
+  }, [router, user, authLoading]);
 
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 via-slate-50 to-blue-100 dark:from-[#1a1f3a] dark:via-[#0f1220] dark:to-[#232C64]">

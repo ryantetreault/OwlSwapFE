@@ -24,6 +24,10 @@ export default function StripeSetupPage() {
       return;
     }
     if (!authLoading && user) {
+      if (sessionStorage.getItem('verification_pending') === 'true') {
+        router.push(`/verify-email-sent?email=${encodeURIComponent(user.email)}`);
+        return;
+      }
       orderService
         .getStripeSellerStatus()
         .then(setStatus)

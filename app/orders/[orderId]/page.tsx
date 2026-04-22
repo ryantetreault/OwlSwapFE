@@ -54,6 +54,10 @@ export default function OrderDetailPage() {
       return;
     }
     if (!authLoading && user) {
+      if (sessionStorage.getItem('verification_pending') === 'true') {
+        router.push(`/verify-email-sent?email=${encodeURIComponent(user.email)}`);
+        return;
+      }
       fetchOrder().catch(() => {
         setError('Failed to load order. Please try again.');
       }).finally(() => setLoading(false));

@@ -33,6 +33,10 @@ export default function SalesPage() {
       return;
     }
     if (!authLoading && user) {
+      if (sessionStorage.getItem('verification_pending') === 'true') {
+        router.push(`/verify-email-sent?email=${encodeURIComponent(user.email)}`);
+        return;
+      }
       router.refresh();
       fetchOrders();
 

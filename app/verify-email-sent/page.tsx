@@ -4,11 +4,14 @@ import { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api';
 import { API_ENDPOINTS } from '@/lib/constants';
+import Header from '@/components/Header';
+import { useAuth } from '@/hooks/useAuth';
 
 function VerifyEmailSentContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get('email') || '';
   const router = useRouter();
+  const { signOut } = useAuth();
   const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
 
   const handleContinue = () => {
@@ -94,13 +97,24 @@ function VerifyEmailSentContent() {
           )}
         </div>
       )}
+
+      <div className="w-full border-t border-slate-200 dark:border-slate-700" />
+
+      <button
+        onClick={signOut}
+        className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+      >
+        Sign out and use a different account
+      </button>
     </div>
   );
 }
 
 export default function VerifyEmailSentPage() {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      <Header />
+      <div className="flex items-center justify-center px-4 py-12">
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-10 flex flex-col items-center w-full max-w-md">
         <Suspense
           fallback={
@@ -111,6 +125,7 @@ export default function VerifyEmailSentPage() {
         >
           <VerifyEmailSentContent />
         </Suspense>
+      </div>
       </div>
     </div>
   );

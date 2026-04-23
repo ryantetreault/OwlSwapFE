@@ -10,7 +10,6 @@ export const API_ENDPOINTS = {
     RESEND_VERIFICATION: '/api/auth/resend-verification',
   },
   USERS: {
-    ALL: '/user/all', // Get all users
     BY_ID: (id: number) => `/user/${id}`, // Get user by ID
     PROFILE: '/user/profile', // Current user profile (JWT-based)
     RATE: (id: number) => `/user/rate/${id}`, // Rate a user

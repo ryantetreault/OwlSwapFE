@@ -36,14 +36,37 @@ export interface Category {
   name: string;
 }
 
-// Backend actual response from LocationDto.java
+// Backend actual response from LocationDto.java (new expanded model)
 export interface Location {
   locationId: number;
   name: string;
-  address?: string;
+  addressLine1?: string;
+  addressLine2?: string | null;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  latitude?: number;
+  longitude?: number;
+  locationType?: string;
+  verified?: boolean;
+  preset?: boolean;
+  active?: boolean;
+}
+
+export interface CreateSellerLocationRequest {
+  name: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country?: string;
   latitude?: number;
   longitude?: number;
 }
+
+export type UpdateSellerLocationRequest = CreateSellerLocationRequest;
 
 // Backend returns Page<ItemDto> with Spring pagination structure
 export interface PaginatedListingsResponse {

@@ -34,8 +34,14 @@ export const API_ENDPOINTS = {
     ALL: '/item/categories', // Returns array of CategoryDto directly
   },
   LOCATIONS: {
-    ALL: '/location/all', // Fixed: backend uses /location/all not /api/locations
-    BY_ID: (id: number) => `/location/${id}`, // Fixed: backend uses /location/{id}
+    ALL: '/location/all',
+    BY_ID: (id: number) => `/location/${id}`,
+    PRESET: '/location/preset',
+    MY_ADDRESSES: '/location/my-addresses',
+    MY_ADDRESS_BY_ID: (id: number) => `/location/my-addresses/${id}`,
+    CREATE_SELLER: '/location/seller',
+    UPDATE_SELLER: (id: number) => `/location/my-addresses/${id}`,
+    DELETE_SELLER: (id: number) => `/location/my-addresses/${id}`,
   },
   FAVORITES: {
     BY_ITEM: (itemId: number) => `/item-favorites/item/${itemId}`,
@@ -51,12 +57,15 @@ export const API_ENDPOINTS = {
     PURCHASE: (itemId: number) => `/transaction/purchase/${itemId}`, // Buyer from JWT
   },
   ORDERS: {
-    CREATE:           '/orders/create',
-    CANCEL:           (orderId: number) => `/orders/${orderId}/cancel`,
-    FULFILL:          (orderId: number) => `/orders/${orderId}/fulfill`,
-    CHECKOUT_SESSION: (orderId: number) => `/orders/${orderId}/checkout-session`,
-    MY_PURCHASES:     '/orders/my-purchases',
-    MY_SALES:         '/orders/my-sales',
+    CREATE:             '/orders/create',
+    CANCEL:             (orderId: number) => `/orders/${orderId}/cancel`,
+    PICKUP_CODE:        (orderId: number) => `/orders/${orderId}/pickup-code`,
+    READY_FOR_PICKUP:   (orderId: number) => `/orders/${orderId}/ready-for-pickup`,
+    CONFIRM_PICKUP:     (orderId: number) => `/orders/${orderId}/confirm-pickup`,
+    REFUND:             (orderId: number) => `/orders/${orderId}/refund`,
+    CHECKOUT_SESSION:   (orderId: number) => `/orders/${orderId}/checkout-session`,
+    MY_PURCHASES:       '/orders/my-purchases',
+    MY_SALES:           '/orders/my-sales',
   },
   STRIPE: {
     ONBOARDING_LINK: '/stripe/connect/onboarding-link',

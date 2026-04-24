@@ -2,6 +2,9 @@ import { apiClient } from '../api';
 import { API_ENDPOINTS } from '../constants';
 import type {
   OrderDto,
+  PickupCodeResponseDto,
+  ConfirmPickupRequest,
+  RefundOrderRequestDto,
   StripeCheckoutSessionDto,
   StripeOnboardingLinkDto,
   StripeSellerStatusDto,
@@ -24,10 +27,34 @@ export const orderService = {
   },
 
   /**
-   * Mark a PAID order as fulfilled (seller only).
+   * Seller: generate a pickup code for a PAID order.
+   * Returns the code the buyer must present at pickup.
    */
-  fulfillOrder: async (orderId: number): Promise<OrderDto> => {
-    return apiClient.post<OrderDto>(API_ENDPOINTS.ORDERS.FULFILL(orderId), undefined, true);
+  generatePickupCode: async (orderId: number): Promise<PickupCodeResponseDto> => {
+    return apiClient.post<PickupCodeResponseDto>(API_ENDPOINTS.ORDERS.PICKUP_CODE(orderId), undefined, true);
+  },
+
+  /**
+   * Seller: mark a PAID order as ready for pickup (transitions to READY_FOR_PICKUP).
+   */
+  markReadyForPickup: async (orderId: number): Promise<OrderDto> => {
+    return apiClient.post<OrderDto>(API_ENDPOINTS.ORDERS.READY_FOR_PICKUP(orderId), undefined, true);
+  },
+
+  /**
+   * Buyer: confirm pickup by providing the pickup code (transitions to FULFILLED).
+   */
+  confirmPickup: async (orderId: number, pickupCode: string): Promise<OrderDto> => {
+    const body: ConfirmPickupRequest = { pickupCode };
+    return apiClient.post<OrderDto>(API_ENDPOINTS.ORDERS.CONFIRM_PICKUP(orderId), body, true);
+  },
+
+  /**
+   * Request a refund for a PAID or FULFILLED order.
+   */
+  refundOrder: async (orderId: number, reason: string): Promise<OrderDto> => {
+    const body: RefundOrderRequestDto = { reason };
+    return apiClient.post<OrderDto>(API_ENDPOINTS.ORDERS.REFUND(orderId), body, true);
   },
 
   /**

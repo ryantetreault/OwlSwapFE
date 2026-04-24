@@ -1,6 +1,7 @@
 export type OrderStatus =
   | 'PENDING'
   | 'PAID'
+  | 'READY_FOR_PICKUP'
   | 'FULFILLED'
   | 'CANCELLED'
   | 'EXPIRED'
@@ -14,9 +15,28 @@ export interface OrderDto {
   amount: number;
   currency: string;
   status: OrderStatus;
-  // ISO datetime — only meaningful when status === 'PENDING'
   reservedUntil: string | null;
   createdAt: string;
+  refundId: string | null;
+  refundReason: string | null;
+  refundedAt: string | null;
+  fulfillmentMethod: string | null;
+  pickupCodeGeneratedAt: string | null;
+  readyForPickupAt: string | null;
+  fulfilledAt: string | null;
+}
+
+export interface PickupCodeResponseDto {
+  orderId: number;
+  pickupCode: string;
+}
+
+export interface ConfirmPickupRequest {
+  pickupCode: string;
+}
+
+export interface RefundOrderRequestDto {
+  reason: string;
 }
 
 export interface StripeCheckoutSessionDto {

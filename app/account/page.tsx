@@ -140,7 +140,7 @@ export default function AccountPage() {
       // Load seller's orders
       try {
         const sellerOrders = await orderService.getMySales();
-        setPendingFulfillments(sellerOrders.filter((o) => o.status === "PAID"));
+        setPendingFulfillments(sellerOrders.filter((o) => o.status === "PAID" || o.status === "READY_FOR_PICKUP"));
         setFulfilledSales(sellerOrders.filter((o) => o.status === "FULFILLED"));
       } catch {
         setPendingFulfillments([]);
@@ -152,7 +152,7 @@ export default function AccountPage() {
         const buyerOrders = await orderService.getMyPurchases();
         setActiveBuyerOrders(
           buyerOrders.filter(
-            (o) => o.status === "PENDING" || o.status === "PAID",
+            (o) => o.status === "PENDING" || o.status === "PAID" || o.status === "READY_FOR_PICKUP",
           ),
         );
         setFulfilledPurchases(buyerOrders.filter((o) => o.status === "FULFILLED"));
@@ -211,16 +211,16 @@ export default function AccountPage() {
     setSelectedListing(null);
   };
 
-  const handleFulfillOrder = async (orderId: number) => {
+  const handleMarkReadyForPickup = async (orderId: number) => {
     setFulfillLoadingId(orderId);
     try {
-      await orderService.fulfillOrder(orderId);
+      const updated = await orderService.markReadyForPickup(orderId);
       setPendingFulfillments((prev) =>
-        prev.filter((o) => o.orderId !== orderId),
+        prev.map((o) => (o.orderId === orderId ? updated : o)),
       );
     } catch (err) {
       const apiErr = err as ApiError;
-      alert(apiErr.message || "Could not fulfill this order. Please try again.");
+      alert(apiErr.message || "Could not update this order. Please try again.");
     } finally {
       setFulfillLoadingId(null);
     }
@@ -747,10 +747,12 @@ export default function AccountPage() {
                                   className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${
                                     order.status === "PENDING"
                                       ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                                      : order.status === "READY_FOR_PICKUP"
+                                      ? "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300"
                                       : "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300"
                                   }`}
                                 >
-                                  {order.status}
+                                  {order.status === "READY_FOR_PICKUP" ? "READY FOR PICKUP" : order.status}
                                 </span>
                               </div>
                               <div className="flex items-center gap-3">
@@ -810,7 +812,7 @@ export default function AccountPage() {
                 {/* Sales Tab */}
                 {activeTab === "sales" && (
                   <div>
-                    {/* Orders to Fulfill — PAID orders awaiting seller action */}
+                    {/* Orders to Fulfill — PAID / READY_FOR_PICKUP orders awaiting seller action */}
                     <div className="mb-6">
                       <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">
                         Orders to Fulfill
@@ -835,25 +837,34 @@ export default function AccountPage() {
                                 <p className="text-sm text-slate-600 dark:text-slate-400">
                                   Item #{order.itemId}
                                 </p>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 mt-1">
-                                  PAID
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${
+                                  order.status === "READY_FOR_PICKUP"
+                                    ? "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300"
+                                    : "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300"
+                                }`}>
+                                  {order.status === "READY_FOR_PICKUP" ? "READY FOR PICKUP" : order.status}
                                 </span>
                               </div>
                               <div className="flex flex-col items-end gap-2">
                                 <span className="text-lg font-bold text-[#232C64] dark:text-white">
                                   ${order.amount.toFixed(2)}
                                 </span>
-                                <button
-                                  onClick={() =>
-                                    handleFulfillOrder(order.orderId)
-                                  }
-                                  disabled={fulfillLoadingId === order.orderId}
-                                  className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                >
-                                  {fulfillLoadingId === order.orderId
-                                    ? "Confirming..."
-                                    : "Mark as Fulfilled"}
-                                </button>
+                                {order.status === "PAID" && (
+                                  <button
+                                    onClick={() => handleMarkReadyForPickup(order.orderId)}
+                                    disabled={fulfillLoadingId === order.orderId}
+                                    className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                  >
+                                    {fulfillLoadingId === order.orderId
+                                      ? "Updating..."
+                                      : "Mark Ready for Pickup"}
+                                  </button>
+                                )}
+                                {order.status === "READY_FOR_PICKUP" && (
+                                  <span className="text-xs text-purple-600 dark:text-purple-400 font-medium">
+                                    Awaiting buyer pickup
+                                  </span>
+                                )}
                               </div>
                             </div>
                           ))}

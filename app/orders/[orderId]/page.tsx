@@ -27,6 +27,8 @@ export default function OrderDetailPage() {
   const [countdown, setCountdown] = useState<number>(0);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [hasRated, setHasRated] = useState(false);
+  const [myPickupCode, setMyPickupCode] = useState<string | null>(null);
+  const [sellerCodeInput, setSellerCodeInput] = useState('');
 
   const fetchOrder = useCallback(async () => {
     const [purchases, sales] = await Promise.all([
@@ -64,9 +66,9 @@ export default function OrderDetailPage() {
     }
   }, [user, authLoading, router, fetchOrder]);
 
-  // Auto-poll while order is PENDING so status updates when webhook fires
+  // Auto-poll while order is PENDING or READY_FOR_PICKUP so status updates automatically
   useEffect(() => {
-    if (!order || order.status !== 'PENDING') return;
+    if (!order || (order.status !== 'PENDING' && order.status !== 'READY_FOR_PICKUP')) return;
     const id = setInterval(fetchOrder, PENDING_POLL_MS);
     return () => clearInterval(id);
   }, [order?.status, fetchOrder]);
@@ -113,13 +115,42 @@ export default function OrderDetailPage() {
     }
   }
 
-  async function handleFulfill() {
+  async function handleMarkReadyForPickup() {
     if (!order) return;
     setActionLoading(true);
     setError(null);
     try {
-      const updated = await orderService.fulfillOrder(order.orderId);
+      const updated = await orderService.markReadyForPickup(order.orderId);
       setOrder(updated);
+    } catch (err) {
+      setError(extractApiError(err));
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleGetPickupCode() {
+    if (!order) return;
+    setActionLoading(true);
+    setError(null);
+    try {
+      const result = await orderService.generatePickupCode(order.orderId);
+      setMyPickupCode(result.pickupCode);
+    } catch (err) {
+      setError(extractApiError(err));
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleConfirmPickup() {
+    if (!order || !sellerCodeInput.trim()) return;
+    setActionLoading(true);
+    setError(null);
+    try {
+      const updated = await orderService.confirmPickup(order.orderId, sellerCodeInput.trim());
+      setOrder(updated);
+      setSellerCodeInput('');
     } catch (err) {
       setError(extractApiError(err));
     } finally {
@@ -283,7 +314,32 @@ export default function OrderDetailPage() {
               </div>
             )}
 
-            {role === 'buyer' && (order.status === 'PAID' || order.status === 'FULFILLED') && (
+            {role === 'buyer' && (order.status === 'READY_FOR_PICKUP' || order.status === 'PAID') && (
+              <div className="pt-2 space-y-2">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  {order.status === 'READY_FOR_PICKUP'
+                    ? 'Your item is ready for pickup! Generate your code and show it to the seller.'
+                    : 'Generate your pickup code to prepare for pickup.'}
+                </p>
+                {myPickupCode ? (
+                  <div className="bg-slate-100 dark:bg-slate-700 rounded-xl px-4 py-3 text-center">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Your pickup code</p>
+                    <p className="text-2xl font-mono font-bold tracking-widest text-[#232C64] dark:text-white">{myPickupCode}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Show this to the seller</p>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleGetPickupCode}
+                    disabled={actionLoading}
+                    className="w-full px-4 py-2.5 bg-[#232C64] text-white text-sm font-semibold rounded-xl hover:bg-[#1a2350] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {actionLoading ? 'Generating...' : 'Get Pickup Code'}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {role === 'buyer' && order.status === 'FULFILLED' && (
               <div className="pt-2">
                 {hasRated ? (
                   <div className="flex items-center gap-1.5 text-sm font-medium text-green-600 dark:text-green-400">
@@ -309,11 +365,33 @@ export default function OrderDetailPage() {
             {role === 'seller' && order.status === 'PAID' && (
               <div className="pt-2">
                 <button
-                  onClick={handleFulfill}
+                  onClick={handleMarkReadyForPickup}
                   disabled={actionLoading}
                   className="w-full px-4 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {actionLoading ? 'Marking...' : 'Mark as Fulfilled'}
+                  {actionLoading ? 'Updating...' : 'Mark Ready for Pickup'}
+                </button>
+              </div>
+            )}
+
+            {role === 'seller' && order.status === 'READY_FOR_PICKUP' && (
+              <div className="pt-2 space-y-2">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Ask the buyer for their pickup code and enter it below to complete the handoff.
+                </p>
+                <input
+                  type="text"
+                  value={sellerCodeInput}
+                  onChange={(e) => setSellerCodeInput(e.target.value)}
+                  placeholder="Enter buyer's pickup code"
+                  className="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#232C64]"
+                />
+                <button
+                  onClick={handleConfirmPickup}
+                  disabled={actionLoading || !sellerCodeInput.trim()}
+                  className="w-full px-4 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {actionLoading ? 'Confirming...' : 'Confirm Pickup'}
                 </button>
               </div>
             )}

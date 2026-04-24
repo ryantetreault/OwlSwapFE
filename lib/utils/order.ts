@@ -20,12 +20,13 @@ export const ORDER_STATUS_META: Record<
   OrderStatus,
   { label: string; colour: string }
 > = {
-  PENDING:   { label: 'Pending Payment', colour: 'text-yellow-600 dark:text-yellow-400' },
-  PAID:      { label: 'Paid',            colour: 'text-blue-600 dark:text-blue-400'   },
-  FULFILLED: { label: 'Fulfilled',       colour: 'text-green-600 dark:text-green-400' },
-  CANCELLED: { label: 'Cancelled',       colour: 'text-slate-500 dark:text-slate-400' },
-  EXPIRED:   { label: 'Expired',         colour: 'text-red-600 dark:text-red-400'     },
-  REFUNDED:  { label: 'Refunded',        colour: 'text-purple-600 dark:text-purple-400' },
+  PENDING:          { label: 'Pending Payment',  colour: 'text-yellow-600 dark:text-yellow-400' },
+  PAID:             { label: 'Paid',             colour: 'text-blue-600 dark:text-blue-400'     },
+  READY_FOR_PICKUP: { label: 'Ready for Pickup', colour: 'text-purple-600 dark:text-purple-400' },
+  FULFILLED:        { label: 'Fulfilled',        colour: 'text-green-600 dark:text-green-400'   },
+  CANCELLED:        { label: 'Cancelled',        colour: 'text-slate-500 dark:text-slate-400'   },
+  EXPIRED:          { label: 'Expired',          colour: 'text-red-600 dark:text-red-400'       },
+  REFUNDED:         { label: 'Refunded',         colour: 'text-purple-600 dark:text-purple-400' },
 };
 
 /** Extract a user-facing error message from an ApiError */

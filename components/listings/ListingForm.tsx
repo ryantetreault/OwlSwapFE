@@ -39,7 +39,9 @@ export function ListingForm({ user }: ListingFormProps) {
   const searchParams = useSearchParams();
   const returnTo = searchParams.get('from') === 'account' ? '/account' : '/listings';
   const [categories, setCategories] = useState<Category[]>([]);
-  const [locations, setLocations] = useState<Location[]>([]);
+  const [presetLocations, setPresetLocations] = useState<Location[]>([]);
+  const [myAddresses, setMyAddresses] = useState<Location[]>([]);
+  const [locationType, setLocationType] = useState<"preset" | "custom">("preset");
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -63,12 +65,14 @@ export function ListingForm({ user }: ListingFormProps) {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [categoriesRes, locationsRes] = await Promise.all([
-          apiClient.get<Category[]>(API_ENDPOINTS.CATEGORIES.ALL, true), // Require auth
-          apiClient.get<Location[]>(API_ENDPOINTS.LOCATIONS.ALL, true), // Require auth
+        const [categoriesRes, presetRes, myAddrRes] = await Promise.all([
+          apiClient.get<Category[]>(API_ENDPOINTS.CATEGORIES.ALL, true),
+          apiClient.get<Location[]>(API_ENDPOINTS.LOCATIONS.PRESET, true),
+          apiClient.get<Location[]>(API_ENDPOINTS.LOCATIONS.MY_ADDRESSES, true),
         ]);
         setCategories(categoriesRes);
-        setLocations(locationsRes);
+        setPresetLocations(presetRes);
+        setMyAddresses(myAddrRes);
       } catch (err) {
         console.error("Error loading categories/locations:", err);
         setError("Failed to load form data. Please refresh the page.");
@@ -90,6 +94,11 @@ export function ListingForm({ user }: ListingFormProps) {
       ...prev,
       [name]: newValue,
     }));
+  };
+
+  const handleLocationTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setLocationType(e.target.value as "preset" | "custom");
+    setFormData((prev) => ({ ...prev, locationId: "" }));
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -309,10 +318,18 @@ export function ListingForm({ user }: ListingFormProps) {
             </select>
           </div>
 
-          <div>
+          <div className="space-y-2">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               Location
             </label>
+            <select
+              value={locationType}
+              onChange={handleLocationTypeChange}
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-[#232C64] focus:border-transparent dark:bg-slate-700 dark:text-white"
+            >
+              <option value="preset">Preset Location</option>
+              <option value="custom">My Address</option>
+            </select>
             <select
               name="locationId"
               value={formData.locationId}
@@ -320,12 +337,25 @@ export function ListingForm({ user }: ListingFormProps) {
               className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-[#232C64] focus:border-transparent dark:bg-slate-700 dark:text-white"
               required
             >
-              <option value="">Select a location</option>
-              {locations.map((loc) => (
-                <option key={loc.locationId} value={loc.locationId}>
-                  {loc.name}
-                </option>
-              ))}
+              {locationType === "preset" ? (
+                <>
+                  <option value="">Select a preset location</option>
+                  {presetLocations.map((loc) => (
+                    <option key={loc.locationId} value={loc.locationId}>
+                      {loc.name}
+                    </option>
+                  ))}
+                </>
+              ) : (
+                <>
+                  <option value="">Select your address</option>
+                  {myAddresses.map((loc) => (
+                    <option key={loc.locationId} value={loc.locationId}>
+                      {loc.name}
+                    </option>
+                  ))}
+                </>
+              )}
             </select>
             <ValidationError fieldErrors={fieldErrors} fieldName="locationId" />
           </div>

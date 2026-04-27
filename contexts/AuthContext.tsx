@@ -83,11 +83,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setStoredUser(userResponse);
       setUser(userResponse);
 
-      // If verification is still pending, send them back to the holding page
-      if (sessionStorage.getItem('verification_pending') === 'true') {
-        router.push(`/verify-email-sent?email=${encodeURIComponent(userResponse.email)}`);
-        return;
-      }
+      // Successful sign-in means the account is verified — clear any pending flag
+      sessionStorage.removeItem('verification_pending');
 
       router.push('/listings');
     } catch (err) {

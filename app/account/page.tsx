@@ -5,10 +5,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
-import {
-  EditProfileForm,
-  UpdateProfileData,
-} from "@/components/EditProfileForm";
 import { apiClient } from "@/lib/api";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { transactionsService } from "@/lib/services/transactions.service";
@@ -46,7 +42,6 @@ export default function AccountPage() {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [pendingFulfillments, setPendingFulfillments] = useState<OrderDto[]>([]);
   const [activeBuyerOrders, setActiveBuyerOrders] = useState<OrderDto[]>([]);
@@ -160,16 +155,6 @@ export default function AccountPage() {
     }
   };
 
-  const handleSaveProfile = async (data: UpdateProfileData) => {
-    // TODO: Implement profile update functionality
-    console.log("Profile update requested:", data);
-    alert("Profile update functionality coming soon!");
-    setIsEditingProfile(false);
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditingProfile(false);
-  };
 
   const handleViewListing = (listing: Listing) => {
     setSelectedListing(listing);
@@ -231,92 +216,38 @@ export default function AccountPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Account Header */}
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md p-6 mb-6">
-          {!isEditingProfile ? (
-            <>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-[#232C64] rounded-full flex items-center justify-center">
-                    <span className="text-2xl font-bold text-white">
-                      {user.firstName[0]}
-                      {user.lastName[0]}
-                    </span>
-                  </div>
-                  <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                      {user.firstName} {user.lastName}
-                    </h1>
-                    <p className="text-slate-600 dark:text-slate-400">
-                      @{user.username}
-                    </p>
-                    <p className="text-sm text-slate-500 dark:text-slate-500">
-                      {user.email}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setIsEditingProfile(true)}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#232C64] dark:bg-[#2d3a7a] rounded-lg hover:bg-[#1a2350] dark:hover:bg-[#232C64] transition-all shadow-md hover:shadow-lg"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                  Edit Profile
-                </button>
+          <div className="flex items-center gap-4 mb-4">
+              <div className="w-16 h-16 bg-[#232C64] rounded-full flex items-center justify-center">
+                <span className="text-2xl font-bold text-white">
+                  {user.firstName[0]}
+                  {user.lastName[0]}
+                </span>
               </div>
-
-              {/* Rating Display */}
-              {user.averageRating !== null && (
-                <div className="flex items-center gap-2">
-                  <span className="text-yellow-500">★</span>
-                  <span className="font-semibold text-slate-900 dark:text-white">
-                    {user.averageRating.toFixed(1)}
-                  </span>
-                  <span className="text-slate-600 dark:text-slate-400">
-                    Rating
-                  </span>
-                </div>
-              )}
-            </>
-          ) : (
-            <div>
-              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-200 dark:border-slate-700">
-                <div className="w-12 h-12 bg-linear-to-r from-[#232C64] to-[#2d3a7a] rounded-lg flex items-center justify-center">
-                  <svg
-                    className="w-6 h-6 text-white"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                    Edit Profile
-                  </h2>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
-                    Update your personal information
-                  </p>
-                </div>
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                  {user.firstName} {user.lastName}
+                </h1>
+                <p className="text-slate-600 dark:text-slate-400">
+                  @{user.username}
+                </p>
+                <p className="text-sm text-slate-500 dark:text-slate-500">
+                  {user.email}
+                </p>
               </div>
-              <EditProfileForm
-                user={user}
-                onSave={handleSaveProfile}
-                onCancel={handleCancelEdit}
-              />
             </div>
-          )}
+
+            {/* Rating Display */}
+            {user.averageRating !== null && (
+              <div className="flex items-center gap-2">
+                <span className="text-yellow-500">★</span>
+                <span className="font-semibold text-slate-900 dark:text-white">
+                  {user.averageRating.toFixed(1)}
+                </span>
+                <span className="text-slate-600 dark:text-slate-400">
+                  Rating
+                </span>
+              </div>
+            )}
         </div>
 
         {/* Tabs */}

@@ -133,7 +133,7 @@ function CheckoutSuccessContent() {
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 pt-2">
+        <div className="flex flex-col gap-3 pt-2">
           <Link
             href="/listings"
             className="flex-1 text-center px-6 py-3 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"

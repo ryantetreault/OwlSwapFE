@@ -11,14 +11,6 @@ interface RateSellerModalProps {
   onRated: () => void;
 }
 
-const STAR_LABELS: Record<number, string> = {
-  1: 'Poor',
-  2: 'Fair',
-  3: 'Good',
-  4: 'Great',
-  5: 'Excellent',
-};
-
 export default function RateSellerModal({ sellerId, orderId, onClose, onRated }: RateSellerModalProps) {
   const [hoveredStar, setHoveredStar] = useState(0);
   const [selectedStar, setSelectedStar] = useState(0);
@@ -84,7 +76,7 @@ export default function RateSellerModal({ sellerId, orderId, onClose, onRated }:
         ) : (
           /* Rating state */
           <div className="space-y-5">
-            <div className="text-center pr-6">
+            <div className="text-center">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">Rate Your Seller</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                 How was your experience with this seller?
@@ -96,33 +88,54 @@ export default function RateSellerModal({ sellerId, orderId, onClose, onRated }:
               className="flex items-center justify-center gap-1"
               onMouseLeave={() => setHoveredStar(0)}
             >
-              {[1, 2, 3, 4, 5].map((i) => (
-                <button
-                  key={i}
-                  onMouseEnter={() => setHoveredStar(i)}
-                  onClick={() => setSelectedStar(i)}
-                  className="p-1 transition-transform duration-100 hover:scale-110 focus:outline-none"
-                  aria-label={`Rate ${i} star${i > 1 ? 's' : ''}`}
-                >
-                  <svg
-                    className={
-                      i <= activeStar
-                        ? 'w-10 h-10 text-amber-400 fill-amber-400 transition-colors duration-100'
-                        : 'w-10 h-10 text-slate-300 dark:text-slate-600 fill-transparent transition-colors duration-100'
-                    }
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={i <= activeStar ? 0 : 1.5}
+              {[1, 2, 3, 4, 5].map((i) => {
+                const fillFraction = Math.min(1, Math.max(0, activeStar - (i - 1)));
+                const clipPath = fillFraction >= 1 ? undefined : `inset(0 ${(1 - fillFraction) * 100}% 0 0)`;
+
+                function computeValue(e: React.MouseEvent<HTMLButtonElement>) {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const raw = (e.clientX - rect.left) / rect.width;
+                  const fraction = Math.max(0.1, Math.min(1.0, raw));
+                  return Math.round(((i - 1) + fraction) * 10) / 10;
+                }
+
+                return (
+                  <button
+                    key={i}
+                    onMouseMove={(e) => setHoveredStar(computeValue(e))}
+                    onClick={(e) => setSelectedStar(computeValue(e))}
+                    className="relative p-1 w-12 h-12 transition-transform duration-100 hover:scale-110 focus:outline-none"
+                    aria-label={`Rate up to ${i} star${i > 1 ? 's' : ''}`}
                   >
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                </button>
-              ))}
+                    {/* Empty base star */}
+                    <svg
+                      className="absolute inset-0 w-10 h-10 m-1 text-slate-300 dark:text-slate-600"
+                      viewBox="0 0 24 24"
+                      fill="transparent"
+                      stroke="currentColor"
+                      strokeWidth={1.5}
+                    >
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                    {/* Filled amber star clipped to fillFraction */}
+                    {fillFraction > 0 && (
+                      <svg
+                        className="absolute inset-0 w-10 h-10 m-1 text-amber-400 fill-amber-400 transition-all duration-100"
+                        viewBox="0 0 24 24"
+                        stroke="none"
+                        style={{ clipPath }}
+                      >
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Label */}
             <p className="text-center text-sm font-medium text-amber-500 dark:text-amber-400 h-5 -mt-2">
-              {STAR_LABELS[activeStar] ?? '\u00A0'}
+              {activeStar > 0 ? `${activeStar.toFixed(1)} / 5.0` : ' '}
             </p>
 
             {/* Error */}

@@ -29,6 +29,9 @@ export default function OrderDetailPage() {
   const [hasRated, setHasRated] = useState(false);
   const [myPickupCode, setMyPickupCode] = useState<string | null>(null);
   const [sellerCodeInput, setSellerCodeInput] = useState('');
+  const [showRefundForm, setShowRefundForm] = useState(false);
+  const [refundReasonInput, setRefundReasonInput] = useState('');
+  const [decisionReasonInput, setDecisionReasonInput] = useState('');
 
   const fetchOrder = useCallback(async () => {
     const [purchases, sales] = await Promise.all([
@@ -66,9 +69,10 @@ export default function OrderDetailPage() {
     }
   }, [user, authLoading, router, fetchOrder]);
 
-  // Auto-poll while order is PENDING or READY_FOR_PICKUP so status updates automatically
+  // Auto-poll while status may change due to external actions
   useEffect(() => {
-    if (!order || (order.status !== 'PENDING' && order.status !== 'READY_FOR_PICKUP')) return;
+    const pollStatuses = ['PENDING', 'READY_FOR_PICKUP', 'REFUND_REQUESTED'];
+    if (!order || !pollStatuses.includes(order.status)) return;
     const id = setInterval(fetchOrder, PENDING_POLL_MS);
     return () => clearInterval(id);
   }, [order?.status, fetchOrder]);
@@ -151,6 +155,52 @@ export default function OrderDetailPage() {
       const updated = await orderService.confirmPickup(order.orderId, sellerCodeInput.trim());
       setOrder(updated);
       setSellerCodeInput('');
+    } catch (err) {
+      setError(extractApiError(err));
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleRequestRefund() {
+    if (!order || !refundReasonInput.trim()) return;
+    setActionLoading(true);
+    setError(null);
+    try {
+      const updated = await orderService.requestRefund(order.orderId, refundReasonInput.trim());
+      setOrder(updated);
+      setShowRefundForm(false);
+      setRefundReasonInput('');
+    } catch (err) {
+      setError(extractApiError(err));
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleApproveRefund() {
+    if (!order || !decisionReasonInput.trim()) return;
+    setActionLoading(true);
+    setError(null);
+    try {
+      const updated = await orderService.approveRefundRequest(order.orderId, decisionReasonInput.trim());
+      setOrder(updated);
+      setDecisionReasonInput('');
+    } catch (err) {
+      setError(extractApiError(err));
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleDenyRefund() {
+    if (!order || !decisionReasonInput.trim()) return;
+    setActionLoading(true);
+    setError(null);
+    try {
+      const updated = await orderService.denyRefundRequest(order.orderId, decisionReasonInput.trim());
+      setOrder(updated);
+      setDecisionReasonInput('');
     } catch (err) {
       setError(extractApiError(err));
     } finally {
@@ -362,8 +412,107 @@ export default function OrderDetailPage() {
               </div>
             )}
 
+            {/* Buyer: request refund on PAID or READY_FOR_PICKUP (hidden if a denial message is already shown) */}
+            {role === 'buyer' && (order.status === 'PAID' || order.status === 'READY_FOR_PICKUP') && !order.refundDecisionReason && (
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+                {showRefundForm ? (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Reason for refund request</p>
+                    <textarea
+                      value={refundReasonInput}
+                      onChange={(e) => setRefundReasonInput(e.target.value)}
+                      placeholder="Please describe why you're requesting a refund..."
+                      rows={3}
+                      className="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#232C64]"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleRequestRefund}
+                        disabled={actionLoading || !refundReasonInput.trim()}
+                        className="flex-1 px-4 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {actionLoading ? 'Submitting...' : 'Submit Refund Request'}
+                      </button>
+                      <button
+                        onClick={() => { setShowRefundForm(false); setRefundReasonInput(''); }}
+                        disabled={actionLoading}
+                        className="px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-sm font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowRefundForm(true)}
+                    className="w-full px-4 py-2.5 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 text-sm font-semibold rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  >
+                    Request Refund
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Buyer: refund request pending */}
+            {role === 'buyer' && order.status === 'REFUND_REQUESTED' && (
+              <div className="pt-2 space-y-1">
+                <p className="text-sm font-medium text-orange-600 dark:text-orange-400">Refund request submitted — awaiting seller response.</p>
+                {order.refundRequestReason && (
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Your reason: {order.refundRequestReason}</p>
+                )}
+              </div>
+            )}
+
+            {/* Buyer: refund denied — backend reverts status to PAID/READY_FOR_PICKUP on denial,
+                so detect via refundDecisionReason being set without a pending request */}
+            {role === 'buyer'
+              && (order.status === 'PAID' || order.status === 'READY_FOR_PICKUP')
+              && order.refundDecisionReason
+              && (
+              <div className="pt-2 space-y-1 border-t border-slate-200 dark:border-slate-700">
+                <p className="text-sm font-medium text-red-600 dark:text-red-400">Your refund request was denied.</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Seller reason: {order.refundDecisionReason}</p>
+              </div>
+            )}
+
+            {/* Seller: approve or deny a refund request */}
+            {role === 'seller' && order.status === 'REFUND_REQUESTED' && (
+              <div className="pt-2 space-y-3">
+                <div className="bg-orange-50 dark:bg-orange-900/20 rounded-xl px-4 py-3">
+                  <p className="text-xs font-medium text-orange-700 dark:text-orange-400 uppercase tracking-wide mb-1">Buyer's refund reason</p>
+                  <p className="text-sm text-slate-700 dark:text-slate-300">{order.refundRequestReason || '—'}</p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Your decision reason (required)</p>
+                  <textarea
+                    value={decisionReasonInput}
+                    onChange={(e) => setDecisionReasonInput(e.target.value)}
+                    placeholder="Explain your decision to the buyer..."
+                    rows={3}
+                    className="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#232C64]"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleApproveRefund}
+                      disabled={actionLoading || !decisionReasonInput.trim()}
+                      className="flex-1 px-4 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {actionLoading ? 'Processing...' : 'Approve Refund'}
+                    </button>
+                    <button
+                      onClick={handleDenyRefund}
+                      disabled={actionLoading || !decisionReasonInput.trim()}
+                      className="flex-1 px-4 py-2.5 border border-red-400 dark:border-red-600 text-red-600 dark:text-red-400 text-sm font-semibold rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {actionLoading ? 'Processing...' : 'Deny Refund'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {role === 'seller' && order.status === 'PAID' && (
-              <div className="pt-2">
+              <div className="pt-2 space-y-2">
                 <button
                   onClick={handleMarkReadyForPickup}
                   disabled={actionLoading}
@@ -371,6 +520,55 @@ export default function OrderDetailPage() {
                 >
                   {actionLoading ? 'Updating...' : 'Mark Ready for Pickup'}
                 </button>
+                {showRefundForm ? (
+                  <div className="space-y-2 border-t border-slate-200 dark:border-slate-700 pt-2">
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Reason for refund</p>
+                    <textarea
+                      value={refundReasonInput}
+                      onChange={(e) => setRefundReasonInput(e.target.value)}
+                      placeholder="Provide a reason for issuing this refund..."
+                      rows={3}
+                      className="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#232C64]"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={async () => {
+                          if (!order || !refundReasonInput.trim()) return;
+                          setActionLoading(true);
+                          setError(null);
+                          try {
+                            const updated = await orderService.refundOrder(order.orderId, refundReasonInput.trim());
+                            setOrder(updated);
+                            setShowRefundForm(false);
+                            setRefundReasonInput('');
+                          } catch (err) {
+                            setError(extractApiError(err));
+                          } finally {
+                            setActionLoading(false);
+                          }
+                        }}
+                        disabled={actionLoading || !refundReasonInput.trim()}
+                        className="flex-1 px-4 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {actionLoading ? 'Processing...' : 'Issue Refund'}
+                      </button>
+                      <button
+                        onClick={() => { setShowRefundForm(false); setRefundReasonInput(''); }}
+                        disabled={actionLoading}
+                        className="px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-sm font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowRefundForm(true)}
+                    className="w-full px-4 py-2.5 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 text-sm font-semibold rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  >
+                    Refund Order
+                  </button>
+                )}
               </div>
             )}
 

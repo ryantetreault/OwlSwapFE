@@ -5,6 +5,8 @@ import type {
   PickupCodeResponseDto,
   ConfirmPickupRequest,
   RefundOrderRequestDto,
+  RequestRefundRequestDto,
+  DecideRefundRequestDto,
   StripeCheckoutSessionDto,
   StripeOnboardingLinkDto,
   StripeSellerStatusDto,
@@ -50,11 +52,35 @@ export const orderService = {
   },
 
   /**
-   * Request a refund for a PAID or FULFILLED order.
+   * Seller/admin: directly refund an order via Stripe.
    */
   refundOrder: async (orderId: number, reason: string): Promise<OrderDto> => {
     const body: RefundOrderRequestDto = { reason };
     return apiClient.post<OrderDto>(API_ENDPOINTS.ORDERS.REFUND(orderId), body, true);
+  },
+
+  /**
+   * Buyer: submit a refund request for seller review (transitions to REFUND_REQUESTED).
+   */
+  requestRefund: async (orderId: number, reason: string): Promise<OrderDto> => {
+    const body: RequestRefundRequestDto = { reason };
+    return apiClient.post<OrderDto>(API_ENDPOINTS.ORDERS.REFUND_REQUEST(orderId), body, true);
+  },
+
+  /**
+   * Seller: approve a buyer's refund request (issues Stripe refund, transitions to REFUNDED).
+   */
+  approveRefundRequest: async (orderId: number, decisionReason: string): Promise<OrderDto> => {
+    const body: DecideRefundRequestDto = { decisionReason };
+    return apiClient.post<OrderDto>(API_ENDPOINTS.ORDERS.APPROVE_REFUND(orderId), body, true);
+  },
+
+  /**
+   * Seller: deny a buyer's refund request (transitions to REFUND_DENIED).
+   */
+  denyRefundRequest: async (orderId: number, decisionReason: string): Promise<OrderDto> => {
+    const body: DecideRefundRequestDto = { decisionReason };
+    return apiClient.post<OrderDto>(API_ENDPOINTS.ORDERS.DENY_REFUND(orderId), body, true);
   },
 
   /**

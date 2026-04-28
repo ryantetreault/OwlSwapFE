@@ -187,9 +187,7 @@ export default function AccountPage() {
   };
 
   const handleEditListing = (itemId: number) => {
-    // TODO: Create edit listing page
-    alert("Edit listing functionality coming soon!");
-    console.log("Edit listing:", itemId);
+    router.push(`/edit-listing/${itemId}`);
   };
 
   const handleDeleteListing = async (itemId: number) => {

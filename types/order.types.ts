@@ -5,7 +5,9 @@ export type OrderStatus =
   | 'FULFILLED'
   | 'CANCELLED'
   | 'EXPIRED'
-  | 'REFUNDED';
+  | 'REFUNDED'
+  | 'REFUND_REQUESTED'
+  | 'REFUND_DENIED';
 
 export interface OrderDto {
   orderId: number;
@@ -19,6 +21,8 @@ export interface OrderDto {
   createdAt: string;
   refundId: string | null;
   refundReason: string | null;
+  refundRequestReason: string | null;
+  refundDecisionReason: string | null;
   refundedAt: string | null;
   fulfillmentMethod: string | null;
   pickupCodeGeneratedAt: string | null;
@@ -37,6 +41,14 @@ export interface ConfirmPickupRequest {
 
 export interface RefundOrderRequestDto {
   reason: string;
+}
+
+export interface RequestRefundRequestDto {
+  reason: string;
+}
+
+export interface DecideRefundRequestDto {
+  decisionReason: string;
 }
 
 export interface StripeCheckoutSessionDto {

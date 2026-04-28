@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { apiClient } from "@/lib/api";
 import { API_ENDPOINTS } from "@/lib/constants";
 import type { User } from "@/types/auth.types";
-import type { Category, Location } from "@/types/listing.types";
+import type { Category, Listing, Location } from "@/types/listing.types";
 import type { ApiError } from "@/types/api.types";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -15,6 +15,8 @@ import { parseDeadlineForBackend } from "@/lib/utils/date";
 
 interface ListingFormProps {
   user: User;
+  initialListing?: Listing;
+  mode?: 'create' | 'edit';
 }
 
 interface ListingFormData {
@@ -34,10 +36,10 @@ interface ListingFormData {
   deadline?: string;
 }
 
-export function ListingForm({ user }: ListingFormProps) {
+export function ListingForm({ user, initialListing, mode = 'create' }: ListingFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const returnTo = searchParams.get('from') === 'account' ? '/account' : '/listings';
+  const returnTo = mode === 'edit' ? '/account' : (searchParams.get('from') === 'account' ? '/account' : '/listings');
   const [categories, setCategories] = useState<Category[]>([]);
   const [presetLocations, setPresetLocations] = useState<Location[]>([]);
   const [myAddresses, setMyAddresses] = useState<Location[]>([]);
@@ -47,18 +49,35 @@ export function ListingForm({ user }: ListingFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>();
-  const [formData, setFormData] = useState<ListingFormData>({
-    name: "",
-    description: "",
-    price: "",
-    category: "",
-    locationId: "",
-    itemType: "product", // Lowercase to match backend
-    available: true,
-    quantity: "1",
-    brand: "",
-    durationMinutes: "",
-    deadline: "",
+  const [formData, setFormData] = useState<ListingFormData>(() => {
+    if (initialListing) {
+      return {
+        name: initialListing.name,
+        description: initialListing.description,
+        price: String(initialListing.price),
+        category: initialListing.category,
+        locationId: initialListing.locationId != null ? String(initialListing.locationId) : "",
+        itemType: (initialListing.itemType as "product" | "service" | "request") || "product",
+        available: initialListing.available,
+        quantity: initialListing.quantity != null ? String(initialListing.quantity) : "1",
+        brand: initialListing.brand || "",
+        durationMinutes: initialListing.durationMinutes != null ? String(initialListing.durationMinutes) : "",
+        deadline: initialListing.deadline || "",
+      };
+    }
+    return {
+      name: "",
+      description: "",
+      price: "",
+      category: "",
+      locationId: "",
+      itemType: "product",
+      available: true,
+      quantity: "1",
+      brand: "",
+      durationMinutes: "",
+      deadline: "",
+    };
   });
 
   // Load categories and locations on mount
@@ -73,6 +92,11 @@ export function ListingForm({ user }: ListingFormProps) {
         setCategories(categoriesRes);
         setPresetLocations(presetRes);
         setMyAddresses(myAddrRes);
+
+        if (initialListing?.locationId != null) {
+          const isPreset = presetRes.some((l) => l.locationId === initialListing.locationId);
+          setLocationType(isPreset ? "preset" : "custom");
+        }
       } catch (err) {
         console.error("Error loading categories/locations:", err);
         setError("Failed to load form data. Please refresh the page.");
@@ -150,6 +174,7 @@ export function ListingForm({ user }: ListingFormProps) {
 
       // Build the item DTO
       const itemDto: any = {
+        ...(mode === 'edit' && initialListing ? { itemId: initialListing.itemId } : {}),
         userId: user.userId,
         name: formData.name,
         description: formData.description,
@@ -158,7 +183,7 @@ export function ListingForm({ user }: ListingFormProps) {
         locationId: parseInt(formData.locationId),
         itemType: formData.itemType,
         available: formData.available,
-        releaseDate: new Date().toISOString().split("T")[0], // Add current date in YYYY-MM-DD format
+        releaseDate: new Date().toISOString().split("T")[0],
       };
 
       // Add type-specific fields
@@ -175,36 +200,35 @@ export function ListingForm({ user }: ListingFormProps) {
         itemDto.deadline = parseDeadlineForBackend(deadlineInput);
       }
 
-      console.log("[ListingForm] Submitting item DTO:", JSON.stringify(itemDto, null, 2));
-
       let response;
 
       if (images.length > 0) {
-        // Use multipart upload with images
         const formDataToSend = new FormData();
         formDataToSend.append(
           "item",
           new Blob([JSON.stringify(itemDto)], { type: "application/json" }),
         );
+        const imagePartName = mode === 'edit' ? "image" : "images";
         images.forEach((image) => {
-          formDataToSend.append("images", image);
+          formDataToSend.append(imagePartName, image);
         });
 
-        response = await apiClient.postFormData(
-          API_ENDPOINTS.ITEMS.CREATE_WITH_IMAGES,
-          formDataToSend,
+        response = mode === 'edit'
+          ? await apiClient.putFormData(API_ENDPOINTS.ITEMS.UPDATE_WITH_IMAGES, formDataToSend, true)
+          : await apiClient.postFormData(API_ENDPOINTS.ITEMS.CREATE_WITH_IMAGES, formDataToSend, true);
+      } else if (mode === 'edit') {
+        response = await apiClient.put(
+          API_ENDPOINTS.ITEMS.UPDATE,
+          itemDto,
           true,
         );
       } else {
-        // JSON-only request
         response = await apiClient.post(
           API_ENDPOINTS.ITEMS.CREATE,
           itemDto,
           true,
         );
       }
-
-      console.log("Listing created successfully:", response);
 
       router.push(returnTo);
     } catch (err) {
@@ -216,7 +240,7 @@ export function ListingForm({ user }: ListingFormProps) {
         setFieldErrors(apiError.fieldErrors);
       }
 
-      setError(apiError.message || "Failed to create listing. Please try again.");
+      setError(apiError.message || `Failed to ${mode === 'edit' ? 'update' : 'create'} listing. Please try again.`);
     } finally {
       setLoading(false);
     }
@@ -506,7 +530,7 @@ export function ListingForm({ user }: ListingFormProps) {
       {/* Submit Buttons */}
       <div className="flex gap-4">
         <Button type="submit" isLoading={loading} className="flex-1">
-          Create Listing
+          {mode === 'edit' ? 'Save Changes' : 'Create Listing'}
         </Button>
         <Button
           type="button"

@@ -35,24 +35,16 @@ interface Sale {
   buyerName: string;
 }
 
-interface Rating {
-  ratingId: number;
-  rating: number;
-  comment: string;
-  raterName: string;
-  date: string;
-}
 
 export default function AccountPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    "overview" | "listings" | "purchases" | "sales" | "ratings"
+    "overview" | "listings" | "purchases" | "sales"
   >("overview");
   const [userListings, setUserListings] = useState<Listing[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
-  const [ratings, setRatings] = useState<Rating[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
@@ -161,9 +153,6 @@ export default function AccountPage() {
         setFulfilledPurchases([]);
       }
 
-      // TODO: Load ratings when backend endpoint is available
-      // Placeholder data for now
-      setRatings([]);
     } catch (error) {
       console.error("Error loading account data:", error);
     } finally {
@@ -374,16 +363,6 @@ export default function AccountPage() {
               >
                 Sales ({pendingFulfillments.length + fulfilledSales.length})
               </button>
-              <button
-                onClick={() => setActiveTab("ratings")}
-                className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === "ratings"
-                    ? "border-[#232C64] text-[#232C64] dark:text-white"
-                    : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                Ratings ({ratings.length})
-              </button>
             </nav>
           </div>
 
@@ -420,14 +399,6 @@ export default function AccountPage() {
                         </h3>
                         <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">
                           {sales.length}
-                        </p>
-                      </div>
-                      <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4">
-                        <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                          Ratings Received
-                        </h3>
-                        <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">
-                          {ratings.length}
                         </p>
                       </div>
                     </div>
@@ -913,46 +884,6 @@ export default function AccountPage() {
                   </div>
                 )}
 
-                {/* Ratings Tab */}
-                {activeTab === "ratings" && (
-                  <div>
-                    {ratings.length === 0 ? (
-                      <div className="text-center py-8">
-                        <p className="text-slate-600 dark:text-slate-400">
-                          No ratings received yet.
-                        </p>
-                        <p className="text-sm text-slate-500 dark:text-slate-500 mt-2">
-                          This section will show ratings from buyers.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {ratings.map((rating) => (
-                          <div
-                            key={rating.ratingId}
-                            className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4"
-                          >
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-yellow-500">
-                                {"★".repeat(rating.rating)}
-                                {"☆".repeat(5 - rating.rating)}
-                              </span>
-                              <span className="text-sm text-slate-600 dark:text-slate-400">
-                                by {rating.raterName}
-                              </span>
-                            </div>
-                            <p className="text-slate-900 dark:text-white">
-                              {rating.comment}
-                            </p>
-                            <p className="text-xs text-slate-500 dark:text-slate-500 mt-2">
-                              {new Date(rating.date).toLocaleDateString()}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
               </>
             )}
           </div>

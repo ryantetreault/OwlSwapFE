@@ -826,9 +826,10 @@ export default function AccountPage() {
                       ) : (
                         <div className="space-y-3">
                           {pendingFulfillments.map((order) => (
-                            <div
+                            <Link
                               key={order.orderId}
-                              className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4 flex justify-between items-center"
+                              href={`/orders/${order.orderId}`}
+                              className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4 flex justify-between items-center hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-sm transition-all"
                             >
                               <div>
                                 <p className="font-semibold text-slate-900 dark:text-white">
@@ -851,7 +852,7 @@ export default function AccountPage() {
                                 </span>
                                 {order.status === "PAID" && (
                                   <button
-                                    onClick={() => handleMarkReadyForPickup(order.orderId)}
+                                    onClick={(e) => { e.preventDefault(); handleMarkReadyForPickup(order.orderId); }}
                                     disabled={fulfillLoadingId === order.orderId}
                                     className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                   >
@@ -862,11 +863,11 @@ export default function AccountPage() {
                                 )}
                                 {order.status === "READY_FOR_PICKUP" && (
                                   <span className="text-xs text-purple-600 dark:text-purple-400 font-medium">
-                                    Awaiting buyer pickup
+                                    Enter Pickup Code &rarr;
                                   </span>
                                 )}
                               </div>
-                            </div>
+                            </Link>
                           ))}
                         </div>
                       )}

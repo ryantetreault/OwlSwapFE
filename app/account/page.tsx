@@ -9,9 +9,11 @@ import { apiClient } from "@/lib/api";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { transactionsService } from "@/lib/services/transactions.service";
 import { orderService } from "@/lib/services/order.service";
+import { subscriptionsService } from "@/lib/services/subscriptions.service";
 import type { Listing } from "@/types/listing.types";
 import type { OrderDto } from "@/types/order.types";
 import type { ApiError } from "@/types/api.types";
+import type { UserSubscription } from "@/types/subscription.types";
 
 interface Purchase {
   purchaseId: number;
@@ -36,7 +38,7 @@ export default function AccountPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    "overview" | "listings" | "purchases" | "sales"
+    "overview" | "listings" | "purchases" | "sales" | "subscribers"
   >("overview");
   const [userListings, setUserListings] = useState<Listing[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
@@ -48,6 +50,7 @@ export default function AccountPage() {
   const [fulfilledPurchases, setFulfilledPurchases] = useState<OrderDto[]>([]);
   const [fulfilledSales, setFulfilledSales] = useState<OrderDto[]>([]);
   const [fulfillLoadingId, setFulfillLoadingId] = useState<number | null>(null);
+  const [subscribers, setSubscribers] = useState<UserSubscription[]>([]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -146,6 +149,14 @@ export default function AccountPage() {
       } catch {
         setActiveBuyerOrders([]);
         setFulfilledPurchases([]);
+      }
+
+      // Load subscribers
+      try {
+        const subs = await subscriptionsService.getUserSubscriptions();
+        setSubscribers(subs);
+      } catch {
+        setSubscribers([]);
       }
 
     } catch (error) {
@@ -293,6 +304,16 @@ export default function AccountPage() {
                 }`}
               >
                 Sales ({pendingFulfillments.length + fulfilledSales.length})
+              </button>
+              <button
+                onClick={() => setActiveTab("subscribers")}
+                className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === "subscribers"
+                    ? "border-[#232C64] text-[#232C64] dark:text-white"
+                    : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                Subscribers ({subscribers.length})
               </button>
             </nav>
           </div>
@@ -809,6 +830,43 @@ export default function AccountPage() {
                               ${order.amount.toFixed(2)}
                             </span>
                           </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Subscribers Tab */}
+                {activeTab === "subscribers" && (
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+                      My Subscribers
+                    </h2>
+                    {subscribers.length === 0 ? (
+                      <p className="text-slate-600 dark:text-slate-400 text-center py-8">
+                        No subscribers yet.
+                      </p>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {subscribers.map((sub) => (
+                          <div
+                            key={sub.userSubscriptionsId.subscriberId}
+                            className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4 flex items-center gap-3"
+                          >
+                            <div className="w-10 h-10 bg-[#232C64] rounded-full flex items-center justify-center shrink-0">
+                              <span className="text-sm font-bold text-white">
+                                {sub.subscriber.firstName[0]}{sub.subscriber.lastName[0]}
+                              </span>
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium text-slate-900 dark:text-white truncate">
+                                {sub.subscriber.firstName} {sub.subscriber.lastName}
+                              </p>
+                              <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
+                                @{sub.subscriber.username}
+                              </p>
+                            </div>
+                          </div>
                         ))}
                       </div>
                     )}

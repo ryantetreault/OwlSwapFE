@@ -44,6 +44,14 @@ export function ListingForm({ user, initialListing, mode = 'create' }: ListingFo
   const [presetLocations, setPresetLocations] = useState<Location[]>([]);
   const [myAddresses, setMyAddresses] = useState<Location[]>([]);
   const [locationType, setLocationType] = useState<"preset" | "custom">("preset");
+  const [customAddress, setCustomAddress] = useState({
+    name: '',
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    state: '',
+    postalCode: '',
+  });
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -96,6 +104,19 @@ export function ListingForm({ user, initialListing, mode = 'create' }: ListingFo
         if (initialListing?.locationId != null) {
           const isPreset = presetRes.some((l) => l.locationId === initialListing.locationId);
           setLocationType(isPreset ? "preset" : "custom");
+          if (!isPreset) {
+            const existing = myAddrRes.find(l => l.locationId === initialListing.locationId);
+            if (existing) {
+              setCustomAddress({
+                name: existing.name ?? '',
+                addressLine1: existing.addressLine1 ?? '',
+                addressLine2: existing.addressLine2 ?? '',
+                city: existing.city ?? '',
+                state: existing.state ?? '',
+                postalCode: existing.postalCode ?? '',
+              });
+            }
+          }
         }
       } catch (err) {
         console.error("Error loading categories/locations:", err);
@@ -123,6 +144,11 @@ export function ListingForm({ user, initialListing, mode = 'create' }: ListingFo
   const handleLocationTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setLocationType(e.target.value as "preset" | "custom");
     setFormData((prev) => ({ ...prev, locationId: "" }));
+  };
+
+  const handleCustomAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setCustomAddress(prev => ({ ...prev, [name]: value }));
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -160,16 +186,46 @@ export function ListingForm({ user, initialListing, mode = 'create' }: ListingFo
 
     try {
       // Validate required fields
+      const customAddressIncomplete = locationType === 'custom' && (
+        !customAddress.name ||
+        !customAddress.addressLine1 ||
+        !customAddress.city ||
+        !customAddress.state ||
+        !customAddress.postalCode
+      );
+
       if (
         !formData.name ||
         !formData.description ||
         !formData.price ||
         !formData.category ||
-        !formData.locationId
+        (locationType === 'preset' && !formData.locationId) ||
+        customAddressIncomplete
       ) {
         setError("Please fill in all required fields");
         setLoading(false);
         return;
+      }
+
+      // Resolve locationId — create a new seller address if custom
+      let resolvedLocationId: number;
+      if (locationType === 'preset') {
+        resolvedLocationId = parseInt(formData.locationId);
+      } else {
+        let newLocation: Location;
+        try {
+          newLocation = await apiClient.post<Location>(
+            API_ENDPOINTS.LOCATIONS.CREATE_SELLER,
+            customAddress,
+            true
+          );
+        } catch (locationErr) {
+          const le = locationErr as ApiError;
+          setError(le.message || 'Could not save the custom address. Please check the address and try again.');
+          setLoading(false);
+          return;
+        }
+        resolvedLocationId = newLocation.locationId;
       }
 
       // Build the item DTO
@@ -180,7 +236,7 @@ export function ListingForm({ user, initialListing, mode = 'create' }: ListingFo
         description: formData.description,
         price: parseFloat(formData.price),
         category: formData.category,
-        locationId: parseInt(formData.locationId),
+        locationId: resolvedLocationId,
         itemType: formData.itemType,
         available: formData.available,
         releaseDate: new Date().toISOString().split("T")[0],
@@ -233,7 +289,7 @@ export function ListingForm({ user, initialListing, mode = 'create' }: ListingFo
       router.push(returnTo);
     } catch (err) {
       const apiError = err as ApiError;
-      console.error("Error creating listing:", { message: apiError.message, status: apiError.status, error: apiError.error, fieldErrors: apiError.fieldErrors, full: apiError });
+      console.error("Error creating listing:", err);
 
       // Extract field-level errors if present
       if (apiError.fieldErrors) {
@@ -352,35 +408,82 @@ export function ListingForm({ user, initialListing, mode = 'create' }: ListingFo
               className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-[#232C64] focus:border-transparent dark:bg-slate-700 dark:text-white"
             >
               <option value="preset">Preset Location</option>
-              <option value="custom">My Address</option>
+              <option value="custom">Custom Address</option>
             </select>
-            <select
-              name="locationId"
-              value={formData.locationId}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-[#232C64] focus:border-transparent dark:bg-slate-700 dark:text-white"
-              required
-            >
-              {locationType === "preset" ? (
-                <>
-                  <option value="">Select a preset location</option>
-                  {presetLocations.map((loc) => (
-                    <option key={loc.locationId} value={loc.locationId}>
-                      {loc.name}
-                    </option>
-                  ))}
-                </>
-              ) : (
-                <>
-                  <option value="">Select your address</option>
-                  {myAddresses.map((loc) => (
-                    <option key={loc.locationId} value={loc.locationId}>
-                      {loc.name}
-                    </option>
-                  ))}
-                </>
-              )}
-            </select>
+            {locationType === "preset" ? (
+              <select
+                name="locationId"
+                value={formData.locationId}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-[#232C64] focus:border-transparent dark:bg-slate-700 dark:text-white"
+                required
+              >
+                <option value="">Select a preset location</option>
+                {presetLocations.map((loc) => (
+                  <option key={loc.locationId} value={loc.locationId}>
+                    {loc.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="Location name (e.g. My Apartment)"
+                  value={customAddress.name}
+                  onChange={handleCustomAddressChange}
+                  required
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-[#232C64] focus:border-transparent dark:bg-slate-700 dark:text-white"
+                />
+                <input
+                  type="text"
+                  name="addressLine1"
+                  placeholder="Address line 1"
+                  value={customAddress.addressLine1}
+                  onChange={handleCustomAddressChange}
+                  required
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-[#232C64] focus:border-transparent dark:bg-slate-700 dark:text-white"
+                />
+                <input
+                  type="text"
+                  name="addressLine2"
+                  placeholder="Address line 2 (optional)"
+                  value={customAddress.addressLine2}
+                  onChange={handleCustomAddressChange}
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-[#232C64] focus:border-transparent dark:bg-slate-700 dark:text-white"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    name="city"
+                    placeholder="City"
+                    value={customAddress.city}
+                    onChange={handleCustomAddressChange}
+                    required
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-[#232C64] focus:border-transparent dark:bg-slate-700 dark:text-white"
+                  />
+                  <input
+                    type="text"
+                    name="state"
+                    placeholder="State"
+                    value={customAddress.state}
+                    onChange={handleCustomAddressChange}
+                    required
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-[#232C64] focus:border-transparent dark:bg-slate-700 dark:text-white"
+                  />
+                </div>
+                <input
+                  type="text"
+                  name="postalCode"
+                  placeholder="ZIP code"
+                  value={customAddress.postalCode}
+                  onChange={handleCustomAddressChange}
+                  required
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-[#232C64] focus:border-transparent dark:bg-slate-700 dark:text-white"
+                />
+              </div>
+            )}
             <ValidationError fieldErrors={fieldErrors} fieldName="locationId" />
           </div>
         </div>

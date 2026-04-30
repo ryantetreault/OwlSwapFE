@@ -289,7 +289,7 @@ export function ListingForm({ user, initialListing, mode = 'create' }: ListingFo
       router.push(returnTo);
     } catch (err) {
       const apiError = err as ApiError;
-      console.error("Error creating listing:", err);
+      console.error("Error creating listing:", JSON.stringify(err));
 
       // Extract field-level errors if present
       if (apiError.fieldErrors) {

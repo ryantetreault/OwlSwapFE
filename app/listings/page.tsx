@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useListings } from "@/hooks/useListings";
@@ -17,6 +17,7 @@ export default function ListingsPage() {
   const { listings, categories, loading, error, filters, setFilters, totalPages, currentPage } =
     useListings();
   const { isFavorite, toggleFavorite } = useFavorites();
+  const [favoriteError, setFavoriteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (sessionStorage.getItem('verification_pending') === 'true') {
@@ -40,9 +41,11 @@ export default function ListingsPage() {
 
   const handleToggleFavorite = async (itemId: number) => {
     try {
+      setFavoriteError(null);
       await toggleFavorite(itemId);
     } catch (err) {
-      console.error('Failed to toggle favorite:', err);
+      const apiError = err as { message?: string };
+      setFavoriteError(apiError.message || 'Failed to update favorite');
     }
   };
 
@@ -96,6 +99,12 @@ export default function ListingsPage() {
         {error && (
           <div className="mb-6">
             <ErrorMessage message={error} />
+          </div>
+        )}
+
+        {favoriteError && (
+          <div className="mb-6">
+            <ErrorMessage message={favoriteError} onDismiss={() => setFavoriteError(null)} />
           </div>
         )}
 
